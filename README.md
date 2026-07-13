@@ -20,6 +20,15 @@ AI-Powered Triaging: Pre-consultation symptom analysis powered by Gemini AI.
 
 Dynamic Rescheduling: Automation handling unexpected clinician leave and subsequent patient rescheduling queues.
 
+Edit: AI Integration
+
+Gemini AI is used to generate pre-visit summaries.
+
+If Gemini is temporarily unavailable or rate limited,
+appointment confirmation still succeeds and the application
+gracefully stores `preVisitSummary = null` while displaying
+"AI summary unavailable" to the user.
+
 🔴 Phase 3: Clinical Workflows & Integrations (Upcoming)
 Doctor Workspace: Dedicated portal tracking daily patient queues and clinical records.
 
@@ -32,8 +41,8 @@ External Ecosystems: Bi-directional calendar synchronization via the Google Cale
 🛠️ Tech Stack
 Framework: Next.js 14 (App Router)
 Language: TypeScript
-Database ORM: Prisma
-Database Engine: PostgreSQL (Neon Serverless)
+Database: PostgreSQL (Neon Serverless)
+ORM: Prisma
 Authentication: NextAuth.js
 AI Engine: Gemini API
 Email Gateway: Resend
@@ -60,4 +69,4 @@ External API: Google Calendar API
 | Patient       | patient1@example.com | password123     |
 
 🧑‍💻 Author
-Developed by Utkarsha
+Developed by Utkarsha Dhawale

@@ -1,15 +1,15 @@
 "use client";
 
+import { Doctor, User } from "@prisma/client";
 import { saveDoctor } from "@/app/admin/doctors/actions";
 
 type DoctorFormProps = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  doctor?: any; // The doctor object with included user
+  doctor?: Doctor & { user: User }; // The doctor object with included user
 };
 
 export default function DoctorForm({ doctor }: DoctorFormProps) {
   const days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-  const workingHours = doctor?.workingHours || {};
+  const workingHours = (doctor?.workingHours as Record<string, string[]>) || {};
 
   return (
     <form action={(formData) => saveDoctor(doctor?.id || "", formData)} className="space-y-6">

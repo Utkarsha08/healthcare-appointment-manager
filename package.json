@@ -12,8 +12,10 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@google/genai": "^2.11.0",
     "@prisma/client": "^6.19.3",
     "bcrypt": "^6.0.0",
+    "dotenv": "^17.4.2",
     "next": "14.2.15",
     "next-auth": "^4.24.14",
     "react": "^18",

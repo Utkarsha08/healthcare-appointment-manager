@@ -84,12 +84,62 @@ export async function addLeaveDay(
   const date = new Date(dateStr);
   date.setUTCHours(0, 0, 0, 0);
 
-  await prisma.leaveDay.create({
-    data: {
-      doctorId,
-      date,
-      reason,
-    },
+  // We need to use a transaction to create the leave day, cancel existing appointments, 
+  // and create notifications.
+  await prisma.$transaction(async (tx) => {
+    // 1. Create the leave day
+    await tx.leaveDay.create({
+      data: {
+        doctorId,
+        date,
+        reason,
+      },
+    });
+
+    // 2. Find all CONFIRMED appointments for that doctor on that date
+    // Date ranges from 00:00 to 23:59 of that day
+    const nextDay = new Date(date);
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+
+    const affectedAppointments = await tx.appointment.findMany({
+      where: {
+        doctorId,
+        status: "CONFIRMED",
+        slotStart: {
+          gte: date,
+          lt: nextDay,
+        },
+      },
+      include: {
+        patient: true,
+      },
+    });
+
+    if (affectedAppointments.length > 0) {
+      // 3. Update status to LEAVE_CANCELLED
+      await tx.appointment.updateMany({
+        where: {
+          id: { in: affectedAppointments.map((a) => a.id) },
+        },
+        data: {
+          status: "LEAVE_CANCELLED",
+        },
+      });
+
+      // 4. Create Notification rows via NotificationService (imported)
+      // Since we can't import notificationService easily without breaking the file structure
+      // we'll inline it or just use tx.notification directly here to keep it simple.
+      const notifications = affectedAppointments.map((appt) => ({
+        appointmentId: appt.id,
+        type: "cancellation",
+        recipient: appt.patient.email,
+        status: "PENDING" as const,
+      }));
+
+      await tx.notification.createMany({
+        data: notifications,
+      });
+    }
   });
 
   revalidatePath("/admin/doctors");
