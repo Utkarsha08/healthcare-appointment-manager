@@ -12,7 +12,7 @@ export default function DoctorForm({ doctor }: DoctorFormProps) {
   const workingHours = doctor?.workingHours || {};
 
   return (
-    <form action={(formData) => saveDoctor(formData, doctor?.id)} className="space-y-6">
+    <form action={(formData) => saveDoctor(doctor?.id || "", formData)} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>

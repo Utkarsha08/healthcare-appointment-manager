@@ -1,9 +1,7 @@
 import DoctorForm from "@/components/DoctorForm";
-import { PrismaClient } from "@prisma/client";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export default async function EditDoctorPage({ params }: { params: { id: string } }) {
   const doctor = await prisma.doctor.findUnique({

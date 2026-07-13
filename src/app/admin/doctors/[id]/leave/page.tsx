@@ -1,9 +1,8 @@
-import { PrismaClient } from "@prisma/client";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { addLeaveDay } from "@/app/admin/doctors/actions";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
 
 export default async function AddLeaveDayPage({ params }: { params: { id: string } }) {
   const doctor = await prisma.doctor.findUnique({
