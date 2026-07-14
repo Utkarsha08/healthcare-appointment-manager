@@ -26,6 +26,10 @@ export default function DoctorProfilePage() {
     specialisation: "",
   });
 
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [googleEmail, setGoogleEmail] = useState("");
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -41,6 +45,8 @@ export default function DoctorProfilePage() {
             about: data.about || "",
             specialisation: data.specialisation || "",
           });
+          setIsGoogleConnected(data.isGoogleConnected || false);
+          setGoogleEmail(data.googleEmail || "");
           setIsLoading(false);
         })
         .catch(() => {
@@ -79,6 +85,24 @@ export default function DoctorProfilePage() {
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDisconnectGoogle = async () => {
+    setIsDisconnecting(true);
+    try {
+      const res = await fetch("/api/calendar/disconnect", { method: "POST" });
+      if (res.ok) {
+        setIsGoogleConnected(false);
+        setGoogleEmail("");
+        setSuccess("Calendar disconnected successfully");
+      } else {
+        setError("Failed to disconnect calendar");
+      }
+    } catch {
+      setError("An unexpected error occurred");
+    } finally {
+      setIsDisconnecting(false);
     }
   };
 
@@ -128,6 +152,44 @@ export default function DoctorProfilePage() {
                 <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Account Role</p>
                 <p className="text-gray-900 font-medium mt-1">{session?.user?.role}</p>
               </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                Google Calendar
+              </h3>
+              
+              {isGoogleConnected ? (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    <span className="text-sm font-semibold text-green-700">Connected</span>
+                  </div>
+                  {googleEmail && <p className="text-sm text-gray-600 mb-4">{googleEmail}</p>}
+                  <button 
+                    onClick={handleDisconnectGoogle}
+                    disabled={isDisconnecting}
+                    className="w-full py-2 px-4 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 text-sm font-medium transition disabled:opacity-50"
+                  >
+                    {isDisconnecting ? "Disconnecting..." : "Disconnect Calendar"}
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-2 h-2 rounded-full bg-gray-300"></span>
+                    <span className="text-sm font-medium text-gray-600">Not Connected</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-4">Sync appointments directly to your Google Calendar.</p>
+                  <a 
+                    href="/api/calendar/connect"
+                    className="block text-center w-full py-2 px-4 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-sm font-medium transition"
+                  >
+                    Connect Google Calendar
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 

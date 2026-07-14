@@ -64,7 +64,31 @@ SMTP_PORT="587"
 SMTP_USER="your-email@example.com"
 SMTP_PASS="your-email-password"
 SMTP_FROM='"Healthcare Manager" <noreply@example.com>'
+
+# Google Calendar OAuth 2.0 (For Doctors)
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+GOOGLE_REDIRECT_URI="http://localhost:3000/api/calendar/callback"
 ```
+
+## 🗓️ Google Calendar Integration
+Healthcare Appointment Manager enables doctors to securely connect their Google Calendars using OAuth 2.0. This is a one-way synchronization (Application → Google Calendar) to mirror appointments accurately.
+
+### Setup Instructions
+1. Navigate to the **[Google Cloud Console](https://console.cloud.google.com/)**.
+2. Create a new project and enable the **Google Calendar API**.
+3. Configure the **OAuth Consent Screen**:
+   - Add scopes: `.../auth/calendar.events` and `.../auth/userinfo.email`.
+   - Add test users (your doctor's email addresses) if the app is in testing mode.
+4. Go to **Credentials** and create an **OAuth client ID** (Web application).
+5. Add the Authorized redirect URI: `http://localhost:3000/api/calendar/callback`.
+6. Copy the generated Client ID and Client Secret into your `.env` file.
+
+### How Doctors Connect
+1. A doctor logs into their account and navigates to **My Profile**.
+2. In the **Google Calendar** card, they click **Connect Google Calendar**.
+3. They authorize the application.
+4. Future booked, updated, and cancelled appointments will seamlessly sync to their Google Calendar via background processing, ensuring bookings are never blocked if the Google API is temporarily unavailable.
 
 ## 🚀 Installation & Local Execution
 

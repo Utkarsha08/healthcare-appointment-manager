@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -30,10 +32,24 @@ export async function GET() {
         about: user.doctorProfile.about,
         consultationFee: user.doctorProfile.consultationFee,
         specialisation: user.doctorProfile.specialisation,
+        googleEmail: user.doctorProfile.googleEmail,
+        isGoogleConnected: !!user.doctorProfile.googleRefreshToken,
+      }, {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+        }
       });
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json({
+      ...user,
+      isGoogleConnected: !!user.googleRefreshToken,
+      googleEmail: user.googleEmail,
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      }
+    });
   } catch (error) {
     console.error("Fetch profile error:", error);
     return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 });

@@ -162,13 +162,25 @@ export async function addLeaveDay(
 
   // 6. Delete Calendar Events outside transaction
   if (affectedAppointments.length > 0) {
-    const { calendarService } = await import("@/lib/services/calendarService");
+    const { jobService } = await import("@/lib/services/jobService");
     for (const appt of affectedAppointments) {
-      if (appt.googleEventIdPatient || appt.googleEventIdDoctor) {
-        await calendarService.deleteCalendarEvents(
-          appt.googleEventIdPatient,
-          appt.googleEventIdDoctor
-        );
+      if (appt.googleEventIdDoctor) {
+        await jobService.queueCalendarSync("DELETE", {
+          appointmentId: appt.id,
+          doctorId: appt.doctorId,
+          patientId: appt.patientId,
+          eventId: appt.googleEventIdDoctor,
+          isForDoctor: true,
+        });
+      }
+      if (appt.googleEventIdPatient) {
+        await jobService.queueCalendarSync("DELETE", {
+          appointmentId: appt.id,
+          doctorId: appt.doctorId,
+          patientId: appt.patientId,
+          eventId: appt.googleEventIdPatient,
+          isForDoctor: false,
+        });
       }
     }
   }

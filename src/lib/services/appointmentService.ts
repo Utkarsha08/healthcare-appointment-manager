@@ -61,8 +61,8 @@ export const appointmentService = {
       preVisitSummary = null;
     }
 
-    // 3. After Gemini finishes, start Transaction 1 to CONFIRM the appointment.
-    const confirmedAppt = await prisma.$transaction(async (tx) => {
+    // 4. Update appointment status inside transaction
+    const finalAppt = await prisma.$transaction(async (tx) => {
       // Re-read the appointment inside the transaction.
       const appt = await tx.appointment.findUnique({
         where: { id: appointmentId },
@@ -85,7 +85,7 @@ export const appointmentService = {
       }
 
       // Update appointment to CONFIRMED.
-      return await tx.appointment.update({
+      const updatedAppt = await tx.appointment.update({
         where: { id: appointmentId },
         data: {
           status: "CONFIRMED",
@@ -102,65 +102,56 @@ export const appointmentService = {
           }
         }
       });
-    });
 
-    // 4. Google Calendar API (Outside transaction, never blocks booking)
-    const { calendarService } = await import("./calendarService");
-    const { notificationService } = await import("./notificationService");
-
-    const calendarResult = await calendarService.createCalendarEvents({
-      patientName: confirmedAppt.patient.name || "Patient",
-      patientEmail: confirmedAppt.patient.email || "",
-      doctorName: confirmedAppt.doctor.user.name || "Doctor",
-      doctorEmail: confirmedAppt.doctor.user.email || "",
-      slotStart: confirmedAppt.slotStart,
-      slotEnd: confirmedAppt.slotEnd,
-      symptoms: confirmedAppt.symptoms || undefined,
-    });
-
-    // 5. Transaction 2: Save Google Event IDs and create notifications
-    const finalAppt = await prisma.$transaction(async (tx) => {
-      const updateData: { googleEventIdPatient?: string; googleEventIdDoctor?: string } = {};
-      
-      if (calendarResult.patientEventId) {
-        updateData.googleEventIdPatient = calendarResult.patientEventId;
-      }
-      if (calendarResult.doctorEventId) {
-        updateData.googleEventIdDoctor = calendarResult.doctorEventId;
-      }
-
-      let updatedAppt = confirmedAppt;
-
-      if (Object.keys(updateData).length > 0) {
-        updatedAppt = await tx.appointment.update({
-          where: { id: appointmentId },
-          data: updateData,
-          include: {
-            patient: true,
-            doctor: {
-              include: { user: true }
-            }
-          }
-        });
-      }
-
+      const { notificationService } = await import("./notificationService");
       await notificationService.createConfirmationNotification(
         tx,
         appointmentId,
-        confirmedAppt.patient.email || "",
-        confirmedAppt.doctor.user.email || "",
-        confirmedAppt.doctor.user.name || "Doctor",
-        confirmedAppt.patient.name || "Patient",
-        new Date(confirmedAppt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+        updatedAppt.patient.email || "",
+        updatedAppt.doctor.user.email || "",
+        updatedAppt.doctor.user.name || "Doctor",
+        updatedAppt.patient.name || "Patient",
+        new Date(updatedAppt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
       );
 
-      // Queue email notification (never breaks flow if it fails because it's recorded in BackgroundJob)
       const { jobService } = await import("./jobService");
+      
+      // Queue email notification
       await jobService.queueEmail("APPOINTMENT_CONFIRMED", {
-        patientEmail: confirmedAppt.patient.email,
-        patientName: confirmedAppt.patient.name,
-        doctorName: confirmedAppt.doctor.user.name,
-        dateStr: new Date(confirmedAppt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+        patientEmail: updatedAppt.patient.email,
+        patientName: updatedAppt.patient.name,
+        doctorName: updatedAppt.doctor.user.name,
+        dateStr: new Date(updatedAppt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+      }, tx);
+
+      // Queue calendar sync for DOCTOR
+      await jobService.queueCalendarSync("CREATE", {
+        appointmentId,
+        doctorId: updatedAppt.doctorId,
+        patientId: updatedAppt.patientId,
+        patientName: updatedAppt.patient.name,
+        patientEmail: updatedAppt.patient.email,
+        doctorName: updatedAppt.doctor.user.name,
+        doctorEmail: updatedAppt.doctor.user.email,
+        slotStart: updatedAppt.slotStart.toISOString(),
+        slotEnd: updatedAppt.slotEnd.toISOString(),
+        symptoms: updatedAppt.symptoms,
+        isForDoctor: true,
+      }, tx);
+
+      // Queue calendar sync for PATIENT
+      await jobService.queueCalendarSync("CREATE", {
+        appointmentId,
+        doctorId: updatedAppt.doctorId,
+        patientId: updatedAppt.patientId,
+        patientName: updatedAppt.patient.name,
+        patientEmail: updatedAppt.patient.email,
+        doctorName: updatedAppt.doctor.user.name,
+        doctorEmail: updatedAppt.doctor.user.email,
+        slotStart: updatedAppt.slotStart.toISOString(),
+        slotEnd: updatedAppt.slotEnd.toISOString(),
+        symptoms: updatedAppt.symptoms,
+        isForDoctor: false,
       }, tx);
 
       return updatedAppt;
@@ -218,17 +209,30 @@ export const appointmentService = {
         isForDoctor: true
       }, tx);
 
+      // Queue calendar sync for deletion (Doctor)
+      if (appt.googleEventIdDoctor) {
+        await jobService.queueCalendarSync("DELETE", {
+          appointmentId,
+          doctorId: appt.doctorId,
+          patientId: appt.patientId,
+          eventId: appt.googleEventIdDoctor,
+          isForDoctor: true,
+        }, tx);
+      }
+
+      // Queue calendar sync for deletion (Patient)
+      if (appt.googleEventIdPatient) {
+        await jobService.queueCalendarSync("DELETE", {
+          appointmentId,
+          doctorId: appt.doctorId,
+          patientId: appt.patientId,
+          eventId: appt.googleEventIdPatient,
+          isForDoctor: false,
+        }, tx);
+      }
+
       return updated;
     });
-
-    // Delete calendar events
-    if (appt.googleEventIdPatient || appt.googleEventIdDoctor) {
-      const { calendarService } = await import("./calendarService");
-      await calendarService.deleteCalendarEvents(
-        appt.googleEventIdPatient || null,
-        appt.googleEventIdDoctor || null
-      );
-    }
 
     fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/cron/process-jobs`).catch(() => {});
 

@@ -21,6 +21,11 @@ model User {
   emergencyContactName  String?
   emergencyContactPhone String?
   createdAt     DateTime      @default(now())
+  googleAccessToken  String?
+  googleRefreshToken String?
+  googleTokenExpiry  DateTime?
+  googleCalendarId   String?
+  googleEmail        String?
   appointments  Appointment[] @relation("PatientAppointments")
   doctorProfile Doctor?
 }
@@ -36,6 +41,11 @@ model Doctor {
   about           String?
   slotDurationMin Int           @default(20)
   workingHours    Json
+  googleAccessToken  String?
+  googleRefreshToken String?
+  googleTokenExpiry  DateTime?
+  googleCalendarId   String?
+  googleEmail        String?
   appointments    Appointment[]
   user            User          @relation(fields: [userId], references: [id])
   leaveDays       LeaveDay[]

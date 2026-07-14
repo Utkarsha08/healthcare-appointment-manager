@@ -17,6 +17,10 @@ export default function PatientProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [googleEmail, setGoogleEmail] = useState("");
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     dateOfBirth: "",
@@ -33,7 +37,7 @@ export default function PatientProfilePage() {
       router.push("/login");
     } else if (status === "authenticated" && session.user.role === "PATIENT") {
       // Fetch current profile
-      fetch("/api/user/me")
+      fetch("/api/user/me", { cache: "no-store" })
         .then(res => res.json())
         .then(data => {
           setFormData({
@@ -46,6 +50,8 @@ export default function PatientProfilePage() {
             emergencyContactName: data.emergencyContactName || "",
             emergencyContactPhone: data.emergencyContactPhone || "",
           });
+          setIsGoogleConnected(data.isGoogleConnected || false);
+          setGoogleEmail(data.googleEmail || "");
           setIsLoading(false);
         })
         .catch(() => {
@@ -93,6 +99,24 @@ export default function PatientProfilePage() {
     }
   };
 
+  const handleDisconnectGoogle = async () => {
+    setIsDisconnecting(true);
+    try {
+      const res = await fetch("/api/calendar/patient/disconnect", { method: "POST" });
+      if (res.ok) {
+        setIsGoogleConnected(false);
+        setGoogleEmail("");
+        success("Calendar disconnected successfully");
+      } else {
+        toastError("Failed to disconnect calendar");
+      }
+    } catch {
+      toastError("An unexpected error occurred");
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
   }
@@ -137,6 +161,44 @@ export default function PatientProfilePage() {
                 <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Calculated Age</p>
                 <p className="text-gray-900 font-medium mt-1">{calculateAge(formData.dateOfBirth)} years old</p>
               </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                Google Calendar
+              </h3>
+              
+              {isGoogleConnected ? (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    <span className="text-sm font-semibold text-green-700">Connected</span>
+                  </div>
+                  {googleEmail && <p className="text-sm text-gray-600 mb-4">{googleEmail}</p>}
+                  <button 
+                    onClick={handleDisconnectGoogle}
+                    disabled={isDisconnecting}
+                    className="w-full py-2 px-4 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 text-sm font-medium transition disabled:opacity-50"
+                  >
+                    {isDisconnecting ? "Disconnecting..." : "Disconnect Calendar"}
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-2 h-2 rounded-full bg-gray-300"></span>
+                    <span className="text-sm font-medium text-gray-600">Not Connected</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-4">Sync appointments directly to your Google Calendar.</p>
+                  <a 
+                    href="/api/calendar/patient/connect"
+                    className="block text-center w-full py-2 px-4 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-sm font-medium transition"
+                  >
+                    Connect Google Calendar
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 

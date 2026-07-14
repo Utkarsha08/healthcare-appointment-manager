@@ -37,6 +37,67 @@ export async function GET() {
           } else {
             console.warn(`Unknown emailType ${p.emailType} for job ${job.id}`);
           }
+        } else if (job.type === "CALENDAR_SYNC_RETRY") {
+          const p = job.payload as {
+            action: string;
+            doctorId: string;
+            patientId: string;
+            appointmentId: string;
+            patientName: string;
+            patientEmail: string;
+            doctorName: string;
+            doctorEmail: string;
+            slotStart: string;
+            slotEnd: string;
+            symptoms?: string;
+            eventId: string;
+            isForDoctor: boolean;
+          };
+          const { calendarService } = await import("@/lib/services/calendarService");
+          
+          if (p.action === "CREATE") {
+            const details = {
+              patientName: p.patientName,
+              patientEmail: p.patientEmail,
+              doctorName: p.doctorName,
+              doctorEmail: p.doctorEmail,
+              slotStart: new Date(p.slotStart),
+              slotEnd: new Date(p.slotEnd),
+              symptoms: p.symptoms,
+            };
+            const eventId = p.isForDoctor 
+              ? await calendarService.createCalendarEvent(p.doctorId, details)
+              : await calendarService.createPatientCalendarEvent(p.patientId, details);
+
+            if (eventId) {
+              const { prisma } = await import("@/lib/prisma");
+              await prisma.appointment.update({
+                where: { id: p.appointmentId },
+                data: p.isForDoctor ? { googleEventIdDoctor: eventId } : { googleEventIdPatient: eventId },
+              });
+            }
+          } else if (p.action === "DELETE") {
+            if (p.isForDoctor) {
+              await calendarService.deleteCalendarEvent(p.doctorId, p.eventId);
+            } else {
+              await calendarService.deletePatientCalendarEvent(p.patientId, p.eventId);
+            }
+          } else if (p.action === "UPDATE") {
+            const details = {
+              patientName: p.patientName,
+              patientEmail: p.patientEmail,
+              doctorName: p.doctorName,
+              doctorEmail: p.doctorEmail,
+              slotStart: new Date(p.slotStart),
+              slotEnd: new Date(p.slotEnd),
+              symptoms: p.symptoms,
+            };
+            if (p.isForDoctor) {
+              await calendarService.updateCalendarEvent(p.doctorId, p.eventId, details);
+            } else {
+              await calendarService.updatePatientCalendarEvent(p.patientId, p.eventId, details);
+            }
+          }
         } else if (job.type === "APPOINTMENT_REMINDER") {
           // Future implementation
         } else if (job.type === "MEDICATION_REMINDER") {

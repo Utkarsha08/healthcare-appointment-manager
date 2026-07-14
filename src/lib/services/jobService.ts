@@ -19,6 +19,23 @@ export const jobService = {
     });
   },
 
+  async queueCalendarSync(
+    action: "CREATE" | "UPDATE" | "DELETE",
+    payload: Record<string, unknown> & { isForDoctor: boolean },
+    tx?: Prisma.TransactionClient
+  ) {
+    const data = {
+      type: "CALENDAR_SYNC_RETRY",
+      payload: { action, ...payload } as Prisma.InputJsonValue,
+      status: "PENDING" as const,
+    };
+    
+    const db = tx || prisma;
+    return await db.backgroundJob.create({
+      data,
+    });
+  },
+
   async markJobCompleted(id: string) {
     return await prisma.backgroundJob.update({
       where: { id },
