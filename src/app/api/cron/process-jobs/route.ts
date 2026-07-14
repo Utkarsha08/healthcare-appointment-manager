@@ -77,10 +77,19 @@ export async function GET() {
               });
             }
           } else if (p.action === "DELETE") {
+            const { prisma } = await import("@/lib/prisma");
             if (p.isForDoctor) {
               await calendarService.deleteCalendarEvent(p.doctorId, p.eventId);
+              await prisma.appointment.update({
+                where: { id: p.appointmentId },
+                data: { googleEventIdDoctor: null },
+              });
             } else {
               await calendarService.deletePatientCalendarEvent(p.patientId, p.eventId);
+              await prisma.appointment.update({
+                where: { id: p.appointmentId },
+                data: { googleEventIdPatient: null },
+              });
             }
           } else if (p.action === "UPDATE") {
             const details = {

@@ -203,10 +203,8 @@ ${symptoms ? `\n**Symptoms:**\n${symptoms}\n` : ""}
         eventId,
       });
     } catch (error: unknown) {
-      if (typeof error === "object" && error !== null && "code" in error && (error as { code: number }).code !== 404) {
-        this._handleGoogleError(error, doctorId);
-        throw error;
-      }
+      // Swallowing the error to ensure cancellation jobs never get permanently stuck
+      this._handleGoogleError(error, doctorId);
     }
   },
 
@@ -428,10 +426,8 @@ ${symptoms ? `\n**Symptoms:**\n${symptoms}\n` : ""}
         eventId,
       });
     } catch (error: unknown) {
-      if (typeof error === "object" && error !== null && "code" in error && (error as { code: number }).code !== 404) {
-        this._handleGoogleErrorPatient(error, patientId);
-        throw error;
-      }
+      // Swallowing the error to ensure cancellation jobs never get permanently stuck
+      this._handleGoogleErrorPatient(error, patientId);
     }
   },
 

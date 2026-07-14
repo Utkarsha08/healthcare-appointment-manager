@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { aiProvider } from "@/lib/ai/gemini";
+import { generateAvailableSlots } from "@/lib/services/slotService";
 
 export const appointmentService = {
   async holdSlot(patientId: string, doctorId: string, slotStartIso: string, slotDurationMin: number) {
@@ -237,5 +238,125 @@ export const appointmentService = {
     fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/cron/process-jobs`).catch(() => {});
 
     return cancelledAppt;
+  },
+
+  async rescheduleBooking(appointmentId: string, patientId: string, newSlotStartIso: string, slotDurationMin: number) {
+    const appt = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        doctor: { include: { user: true } },
+        patient: true,
+      },
+    });
+
+    if (!appt || appt.patientId !== patientId) {
+      throw new Error("Appointment not found or unauthorized");
+    }
+
+    if (appt.status !== "CONFIRMED") {
+      throw new Error("Can only reschedule confirmed appointments");
+    }
+
+    if (new Date(appt.slotStart) <= new Date()) {
+      throw new Error("Cannot reschedule past appointments");
+    }
+
+    const newSlotStart = new Date(newSlotStartIso);
+    if (newSlotStart <= new Date()) {
+      throw new Error("New slot must be in the future");
+    }
+
+    if (appt.slotStart.toISOString() === newSlotStart.toISOString()) {
+      throw new Error("New slot is identical to current slot");
+    }
+
+    const targetDate = new Date(newSlotStartIso);
+    targetDate.setUTCHours(0, 0, 0, 0);
+    const nextDay = new Date(targetDate);
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+
+    const leaveDays = await prisma.leaveDay.findMany({
+      where: {
+        doctorId: appt.doctorId,
+        date: { gte: targetDate, lt: nextDay },
+      },
+    });
+
+    const existingAppointments = await prisma.appointment.findMany({
+      where: {
+        doctorId: appt.doctorId,
+        id: { not: appointmentId }, // exclude current appointment
+        slotStart: { gte: targetDate, lt: nextDay },
+        status: { in: ["HELD", "CONFIRMED", "COMPLETED"] },
+      },
+    });
+
+    const slots = generateAvailableSlots(
+      targetDate,
+      appt.doctor.workingHours,
+      appt.doctor.slotDurationMin,
+      leaveDays,
+      existingAppointments
+    );
+
+    if (!slots.includes(newSlotStart.toISOString())) {
+      throw new Error("Selected slot is not available");
+    }
+
+    const newSlotEnd = new Date(newSlotStart.getTime() + slotDurationMin * 60000);
+
+    const updatedAppt = await prisma.$transaction(async (tx) => {
+      const updated = await tx.appointment.update({
+        where: { id: appointmentId },
+        data: {
+          slotStart: newSlotStart,
+          slotEnd: newSlotEnd,
+        },
+      });
+
+      const { jobService } = await import("./jobService");
+
+      // Queue calendar sync UPDATE for Doctor
+      if (appt.googleEventIdDoctor) {
+        await jobService.queueCalendarSync("UPDATE", {
+          appointmentId,
+          doctorId: appt.doctorId,
+          patientId: appt.patientId,
+          patientName: appt.patient.name,
+          patientEmail: appt.patient.email,
+          doctorName: appt.doctor.user.name,
+          doctorEmail: appt.doctor.user.email,
+          slotStart: newSlotStart.toISOString(),
+          slotEnd: newSlotEnd.toISOString(),
+          symptoms: appt.symptoms || undefined,
+          eventId: appt.googleEventIdDoctor,
+          isForDoctor: true,
+        }, tx);
+      }
+
+      // Queue calendar sync UPDATE for Patient
+      if (appt.googleEventIdPatient) {
+        await jobService.queueCalendarSync("UPDATE", {
+          appointmentId,
+          doctorId: appt.doctorId,
+          patientId: appt.patientId,
+          patientName: appt.patient.name,
+          patientEmail: appt.patient.email,
+          doctorName: appt.doctor.user.name,
+          doctorEmail: appt.doctor.user.email,
+          slotStart: newSlotStart.toISOString(),
+          slotEnd: newSlotEnd.toISOString(),
+          symptoms: appt.symptoms || undefined,
+          eventId: appt.googleEventIdPatient,
+          isForDoctor: false,
+        }, tx);
+      }
+
+      return updated;
+    });
+
+    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/cron/process-jobs`).catch(() => {});
+
+    return updatedAppt;
   }
 };

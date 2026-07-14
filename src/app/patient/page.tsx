@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { HistoryCard } from "@/components/HistoryCard";
 import { UserMenu } from "@/components/UserMenu";
 import CancelAppointmentButton from "@/components/CancelAppointmentButton";
+import RescheduleAppointmentModal from "@/components/RescheduleAppointmentModal";
 
 export default async function PatientPage() {
   const session = await getServerSession(authOptions);
@@ -115,7 +116,15 @@ export default async function PatientPage() {
                         {new Date(appt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
                       </div>
                       {appt.status === "CONFIRMED" && (
-                        <CancelAppointmentButton appointmentId={appt.id} />
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <RescheduleAppointmentModal 
+                            appointmentId={appt.id} 
+                            doctorId={appt.doctorId}
+                            slotDurationMin={appt.doctor.slotDurationMin}
+                            currentSlotStart={appt.slotStart.toISOString()}
+                          />
+                          <CancelAppointmentButton appointmentId={appt.id} />
+                        </div>
                       )}
                     </div>
                   </div>
