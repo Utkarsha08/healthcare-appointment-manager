@@ -86,7 +86,7 @@ export async function addLeaveDay(
 
   // We need to use a transaction to create the leave day, cancel existing appointments, 
   // and create notifications.
-  await prisma.$transaction(async (tx) => {
+  const affectedAppointments = await prisma.$transaction(async (tx) => {
     // 1. Create the leave day
     await tx.leaveDay.create({
       data: {
@@ -101,7 +101,7 @@ export async function addLeaveDay(
     const nextDay = new Date(date);
     nextDay.setUTCDate(nextDay.getUTCDate() + 1);
 
-    const affectedAppointments = await tx.appointment.findMany({
+    const appointmentsToCancel = await tx.appointment.findMany({
       where: {
         doctorId,
         status: "CONFIRMED",
@@ -115,32 +115,41 @@ export async function addLeaveDay(
       },
     });
 
-    if (affectedAppointments.length > 0) {
+    if (appointmentsToCancel.length > 0) {
       // 3. Update status to LEAVE_CANCELLED
       await tx.appointment.updateMany({
         where: {
-          id: { in: affectedAppointments.map((a) => a.id) },
+          id: { in: appointmentsToCancel.map((a) => a.id) },
         },
         data: {
           status: "LEAVE_CANCELLED",
         },
       });
 
-      // 4. Create Notification rows via NotificationService (imported)
-      // Since we can't import notificationService easily without breaking the file structure
-      // we'll inline it or just use tx.notification directly here to keep it simple.
-      const notifications = affectedAppointments.map((appt) => ({
-        appointmentId: appt.id,
-        type: "cancellation",
-        recipient: appt.patient.email,
-        status: "PENDING" as const,
-      }));
-
-      await tx.notification.createMany({
-        data: notifications,
-      });
+      // 4. Create Notification rows via NotificationService
+      const { notificationService } = await import("@/lib/services/notificationService");
+      await notificationService.createLeaveCancellationNotifications(
+        tx,
+        appointmentsToCancel.map((a) => a.id),
+        appointmentsToCancel.map((a) => a.patient.email || "")
+      );
     }
+
+    return appointmentsToCancel;
   });
+
+  // 5. Delete Calendar Events outside transaction
+  if (affectedAppointments.length > 0) {
+    const { calendarService } = await import("@/lib/services/calendarService");
+    for (const appt of affectedAppointments) {
+      if (appt.googleEventIdPatient || appt.googleEventIdDoctor) {
+        await calendarService.deleteCalendarEvents(
+          appt.googleEventIdPatient,
+          appt.googleEventIdDoctor
+        );
+      }
+    }
+  }
 
   revalidatePath("/admin/doctors");
   redirect("/admin/doctors");

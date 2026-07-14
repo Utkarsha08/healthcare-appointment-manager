@@ -9,6 +9,7 @@ export type TodayAppointment = {
   slotEnd: Date;
   symptoms: string | null;
   preVisitSummary: PreVisitSummary | null;
+  status: string;
   patient: {
     name: string;
   };
@@ -34,7 +35,7 @@ export const doctorService = {
         doctor: {
           userId,
         },
-        status: "CONFIRMED",
+        status: { in: ["CONFIRMED", "HELD", "COMPLETED", "CANCELLED", "LEAVE_CANCELLED"] },
         slotStart: {
           gte: todayStart,
           lte: todayEnd,
@@ -46,6 +47,7 @@ export const doctorService = {
         slotEnd: true,
         symptoms: true,
         preVisitSummary: true,
+        status: true,
         patient: {
           select: {
             name: true,
@@ -55,6 +57,13 @@ export const doctorService = {
       orderBy: {
         slotStart: "asc",
       },
+    });
+
+    appointments.sort((a, b) => {
+      const order: Record<string, number> = { CONFIRMED: 0, HELD: 1, COMPLETED: 2, CANCELLED: 3, LEAVE_CANCELLED: 3 };
+      const statusDiff = (order[a.status] ?? 4) - (order[b.status] ?? 4);
+      if (statusDiff !== 0) return statusDiff;
+      return a.slotStart.getTime() - b.slotStart.getTime();
     });
 
     return appointments.map((apt) => ({
@@ -102,6 +111,7 @@ export const doctorService = {
         where: { id: appointmentId },
         include: {
           doctor: true,
+          patient: true,
         },
       });
 
@@ -117,7 +127,7 @@ export const doctorService = {
         throw new Error("Appointment is no longer CONFIRMED");
       }
 
-      return await tx.appointment.update({
+      const updated = await tx.appointment.update({
         where: { id: appointmentId },
         data: {
           doctorNotes,
@@ -127,6 +137,15 @@ export const doctorService = {
           status: "COMPLETED",
         },
       });
+
+      const { notificationService } = await import("./notificationService");
+      await notificationService.createConsultationCompletedNotification(
+        tx,
+        appointmentId,
+        appt.patient.email || ""
+      );
+
+      return updated;
     });
   }
 };

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Alert } from "@/components/ui/Alert";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
 interface Medicine {
   medicine: string;
@@ -15,6 +17,7 @@ export default function ConsultationForm({ appointmentId }: { appointmentId: str
   const [doctorNotes, setDoctorNotes] = useState("");
   const [prescription, setPrescription] = useState<Medicine[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
 
   const handleAddMedicine = () => {
@@ -54,12 +57,14 @@ export default function ConsultationForm({ appointmentId }: { appointmentId: str
         throw new Error(data.error || "Failed to save consultation");
       }
 
-      router.push("/doctor");
-      router.refresh();
+      setIsSuccess(true);
+      setTimeout(() => {
+        router.push("/doctor");
+        router.refresh();
+      }, 1000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
-    } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // only enable button again if error
     }
   };
 
@@ -83,7 +88,9 @@ export default function ConsultationForm({ appointmentId }: { appointmentId: str
           <button
             type="button"
             onClick={handleAddMedicine}
-            className="text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg"
+            disabled={isSubmitting || isSuccess}
+            className="text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg disabled:opacity-50"
+            aria-label="Add Medicine"
           >
             + Add Medicine
           </button>
@@ -143,10 +150,12 @@ export default function ConsultationForm({ appointmentId }: { appointmentId: str
                 <button
                   type="button"
                   onClick={() => handleRemoveMedicine(index)}
-                  className="text-red-500 hover:text-red-700 p-2"
+                  disabled={isSubmitting || isSuccess}
+                  className="text-red-500 hover:text-red-700 p-2 disabled:opacity-50"
                   title="Remove Medicine"
+                  aria-label={`Remove medicine ${med.medicine || `at index ${index}`}`}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
@@ -156,25 +165,17 @@ export default function ConsultationForm({ appointmentId }: { appointmentId: str
         )}
       </div>
 
-      {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-lg text-sm border border-red-100">
-          {error}
-        </div>
-      )}
+      {error && <Alert type="error" message={error} />}
+      {isSuccess && <Alert type="success" message="Consultation completed successfully." />}
 
       <div className="flex justify-end pt-4 border-t border-gray-100">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || isSuccess}
           className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          {isSubmitting && (
-            <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-          )}
-          {isSubmitting ? "Saving & Generating AI Summary..." : "Complete Consultation"}
+          {isSubmitting && <LoadingSpinner size="sm" className="text-white" />}
+          {isSubmitting ? "Completing..." : "Complete Consultation"}
         </button>
       </div>
     </form>

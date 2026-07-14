@@ -1,72 +1,105 @@
-🏥 Healthcare Appointment & Follow-up Manager
-A full-stack healthcare platform engineered to streamline clinical scheduling, patient onboarding, and automated post-visit follow-ups. Built with a modern architecture leveraging serverless database operations, role-based access controls, and generative AI integration.
+# 🏥 Healthcare Appointment & Follow-up Manager
 
-🚀 Features & Roadmap
-🟢 Phase 1: Core Architecture & Administration (Completed)
-Modern Framework: Built using Next.js 14 (App Router), TypeScript, and TailwindCSS.
+A full-stack, production-ready healthcare platform engineered to streamline clinical scheduling, patient onboarding, and automated post-visit follow-ups. Built with a modern architecture leveraging serverless database operations, role-based access controls, robust transactional safety, and generative AI integration.
 
-Secure Authentication: Role-Based Access Control (RBAC) powered by NextAuth.js (Credentials Provider).
+## 🚀 Features & Modules
 
-Administrative Suite: Centralized dashboards for staff management, credentialing, and configuration.
+### 🟢 Phase 1: Core Architecture & Administration (Completed)
+- **Modern Framework**: Next.js 14 (App Router), strict TypeScript, and TailwindCSS.
+- **Secure Authentication**: Role-Based Access Control (RBAC) via NextAuth.js (`PATIENT`, `DOCTOR`, `ADMIN`).
+- **Administrative Suite**: Dashboards for staff management, credentialing, and configuration.
+- **Availability Engines**: Logic for setting daily working hours, recurring shifts, and managing leave days.
 
-Availability Engines: Custom logic for setting daily working hours, scheduling recurring shifts, and managing leave data.
+### 🟢 Phase 2: Patient Portal & Intelligent Booking (Completed)
+- **Patient Dashboard**: Portal for medical histories, structured prescriptions, and appointment timelines.
+- **Self-Registration**: Dedicated `/register` flow with strict validation, `bcrypt` password hashing, unique constraints, and auto-login.
+- **Optimized Scheduling**: Real-time doctor search paired with race-condition safe slot reservation to prevent double bookings.
+- **AI-Powered Triaging**: Pre-consultation symptom analysis powered by Gemini AI with robust transaction fallbacks.
+- **Dynamic Rescheduling**: Automation handling clinician leave, canceling conflicting appointments, and notifying patients.
 
-🟡 Phase 2: Patient Portal & Intelligent Booking (In Progress)
-Patient Dashboard: Consolidated portal for medical histories and appointment timelines.
+### 🟢 Phase 3: Clinical Workflows & Integrations (Completed)
+- **Doctor Workspace**: Dedicated portal prioritizing today's active appointments.
+- **Automated Summaries**: Generation of post-visit clinical notes and care instructions using Gemini AI.
+- **Notification Engine**: Atomic, transaction-bound notification system handling booking, completion, and cancellation alerts.
+- **External Ecosystems**: Bi-directional calendar synchronization via the official `googleapis` package, operating entirely independently of core transactions.
 
-Optimized Scheduling: Real-time doctor search paired with race-condition safe slot reservation to prevent double bookings.
+## 🛠️ Architecture & Tech Stack
 
-AI-Powered Triaging: Pre-consultation symptom analysis powered by Gemini AI.
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript (Strict Mode)
+- **Database**: PostgreSQL (Neon Serverless)
+- **ORM**: Prisma (with two-phase transactional logic to isolate third-party APIs)
+- **Authentication**: NextAuth.js (Credentials Provider)
+- **AI Engine**: Gemini API (`@google/genai`)
+- **External API**: Google Calendar API
 
-Dynamic Rescheduling: Automation handling unexpected clinician leave and subsequent patient rescheduling queues.
+## 📅 Integrations & Setup
 
-Edit: AI Integration
+### Google Calendar Integration
 
-Gemini AI is used to generate pre-visit summaries.
+To enable automatic calendar synchronization for appointments, you must configure the Google Calendar API:
 
-If Gemini is temporarily unavailable or rate limited,
-appointment confirmation still succeeds and the application
-gracefully stores `preVisitSummary = null` while displaying
-"AI summary unavailable" to the user.
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) and create a project.
+2. Enable the **Google Calendar API** under "APIs & Services".
+3. Configure the **OAuth Consent Screen**.
+4. Under Credentials, create an **OAuth client ID** (Web Application).
+5. Generate a **Refresh Token** via the [Google OAuth 2.0 Playground](https://developers.google.com/oauthplayground/):
+   - Scope: `https://www.googleapis.com/auth/calendar`
+6. Provide these credentials in your `.env` file (see Environment Variables).
 
-🔴 Phase 3: Clinical Workflows & Integrations (Upcoming)
-Doctor Workspace: Dedicated portal tracking daily patient queues and clinical records.
+### Generative AI Integration
 
-Automated Summaries: Automated generation of post-visit clinical notes and care instructions using Gemini AI.
+Gemini AI is used to generate pre-visit and post-visit summaries. If Gemini is temporarily unavailable or rate-limited, core transactions (e.g., booking an appointment or completing a consultation) will still succeed gracefully, defaulting to `null` and displaying an "AI summary unavailable" empty state.
 
-Notification Engine: Automated medication alerts and transactional booking updates driven by Resend.
+## ⚙️ Environment Variables
 
-External Ecosystems: Bi-directional calendar synchronization via the Google Calendar API.
+Create your `.env` file in the root directory:
 
-🛠️ Tech Stack
-Framework: Next.js 14 (App Router)
-Language: TypeScript
-Database: PostgreSQL (Neon Serverless)
-ORM: Prisma
-Authentication: NextAuth.js
-AI Engine: Gemini API
-Email Gateway: Resend
-External API: Google Calendar API
+```env
+# Database
+DATABASE_URL="postgresql://user:password@host/db"
 
-⚙️ Installation
-1. Repository Setup:
+# NextAuth
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secure-random-string"
+
+# AI Integration
+GEMINI_API_KEY="your-gemini-api-key"
+
+# Google Calendar API
+GOOGLE_CLIENT_ID="your-client-id"
+GOOGLE_CLIENT_SECRET="your-client-secret"
+GOOGLE_REFRESH_TOKEN="your-refresh-token"
+GOOGLE_CALENDAR_ID="primary" # Or a specific calendar ID
+```
+
+## 🚀 Installation & Local Execution
+
+1. **Repository Setup**:
+   ```bash
    git clone https://github.com/Utkarsha08/healthcare-appointment-manager.git
    cd healthcare-appointment-manager
-2. Dependency Management:npm install
-3. Environment Configuration: Create your environment file using the provided boilerplate template:
-   cp .env.example .env
-4. Database Setup & Migration: Generate your database schema and execute seeds for the testing environment:
-   npx prisma migrate dev
+   ```
+2. **Dependency Management**:
+   ```bash
+   npm install
+   ```
+3. **Database Setup & Migration**:
+   ```bash
+   npx prisma generate
+   npx prisma db push
    npx prisma db seed
-5. Local Execution:
+   ```
+4. **Local Execution**:
+   ```bash
    npm run dev
+   ```
 
-👥 Seed Profiles for Testing:
-| Access Level  | Email Reference      | Secure Password |
-|---------------|----------------------|-----------------|
-| Admin         | admin@example.com    | password123     |
-| Doctor        | doctor1@example.com  | password123     |
-| Patient       | patient1@example.com | password123     |
+## 👥 Demo Accounts
 
-🧑‍💻 Author
-Developed by Utkarsha Dhawale
+The seed script creates the following demo accounts with the password `password123`:
+
+- **Admin**: `admin@example.com`
+- **Doctor (Cardiology)**: `doctor1@example.com`
+- **Doctor (Dermatology)**: `doctor2@example.com`
+- **Patient**: `patient@example.com` (Or create your own via `/register`!)

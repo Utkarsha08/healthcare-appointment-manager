@@ -46,8 +46,8 @@ export const appointmentService = {
       preVisitSummary = null;
     }
 
-    // 3. After Gemini finishes, start prisma.$transaction().
-    return await prisma.$transaction(async (tx) => {
+    // 3. After Gemini finishes, start Transaction 1 to CONFIRM the appointment.
+    const confirmedAppt = await prisma.$transaction(async (tx) => {
       // Re-read the appointment inside the transaction.
       const appt = await tx.appointment.findUnique({
         where: { id: appointmentId },
@@ -66,7 +66,7 @@ export const appointmentService = {
       }
 
       // Update appointment to CONFIRMED.
-      const updated = await tx.appointment.update({
+      return await tx.appointment.update({
         where: { id: appointmentId },
         data: {
           status: "CONFIRMED",
@@ -74,9 +74,67 @@ export const appointmentService = {
           preVisitSummary: preVisitSummary ? (preVisitSummary as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
           holdExpiresAt: null, // Clear the hold expiry once confirmed
         },
+        include: {
+          patient: true,
+          doctor: {
+            include: {
+              user: true,
+            }
+          }
+        }
       });
-
-      return updated;
     });
+
+    // 4. Google Calendar API (Outside transaction, never blocks booking)
+    const { calendarService } = await import("./calendarService");
+    const { notificationService } = await import("./notificationService");
+
+    const calendarResult = await calendarService.createCalendarEvents({
+      patientName: confirmedAppt.patient.name || "Patient",
+      patientEmail: confirmedAppt.patient.email || "",
+      doctorName: confirmedAppt.doctor.user.name || "Doctor",
+      doctorEmail: confirmedAppt.doctor.user.email || "",
+      slotStart: confirmedAppt.slotStart,
+      slotEnd: confirmedAppt.slotEnd,
+      symptoms: confirmedAppt.symptoms || undefined,
+    });
+
+    // 5. Transaction 2: Save Google Event IDs and create notifications
+    const finalAppt = await prisma.$transaction(async (tx) => {
+      const updateData: { googleEventIdPatient?: string; googleEventIdDoctor?: string } = {};
+      
+      if (calendarResult.patientEventId) {
+        updateData.googleEventIdPatient = calendarResult.patientEventId;
+      }
+      if (calendarResult.doctorEventId) {
+        updateData.googleEventIdDoctor = calendarResult.doctorEventId;
+      }
+
+      let updatedAppt = confirmedAppt;
+
+      if (Object.keys(updateData).length > 0) {
+        updatedAppt = await tx.appointment.update({
+          where: { id: appointmentId },
+          data: updateData,
+          include: {
+            patient: true,
+            doctor: {
+              include: { user: true }
+            }
+          }
+        });
+      }
+
+      await notificationService.createConfirmationNotification(
+        tx,
+        appointmentId,
+        confirmedAppt.patient.email || "",
+        confirmedAppt.doctor.user.email || ""
+      );
+
+      return updatedAppt;
+    });
+
+    return finalAppt;
   },
 };

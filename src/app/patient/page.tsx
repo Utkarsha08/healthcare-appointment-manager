@@ -3,20 +3,20 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { HistoryCard } from "@/components/HistoryCard";
 
 export default async function PatientPage() {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "PATIENT") {
     redirect("/login");
+    return null;
   }
-
-  const now = new Date();
 
   const upcomingAppointments = await prisma.appointment.findMany({
     where: {
       patientId: session.user.id,
-      status: "CONFIRMED",
-      slotStart: { gte: now },
+      status: { in: ["HELD", "CONFIRMED"] },
     },
     include: {
       doctor: { include: { user: true } },
@@ -27,8 +27,7 @@ export default async function PatientPage() {
   const previousAppointments = await prisma.appointment.findMany({
     where: {
       patientId: session.user.id,
-      status: { in: ["CONFIRMED", "COMPLETED", "CANCELLED", "LEAVE_CANCELLED"] },
-      slotStart: { lt: now },
+      status: { in: ["COMPLETED", "CANCELLED", "LEAVE_CANCELLED"] },
     },
     include: {
       doctor: { include: { user: true } },
@@ -36,102 +35,147 @@ export default async function PatientPage() {
     orderBy: { slotStart: "desc" },
   });
 
+  const notifications = await prisma.notification.findMany({
+    where: { recipient: session.user.email || "" },
+    orderBy: { createdAt: "desc" },
+    include: {
+      appointment: {
+        include: {
+          doctor: {
+            include: { user: true }
+          }
+        }
+      }
+    },
+    take: 5,
+  });
+
   return (
-    <div className="max-w-6xl mx-auto p-8 space-y-8">
-      <div className="flex justify-between items-center bg-blue-50 p-6 rounded-2xl border border-blue-100">
+    <div className="max-w-7xl mx-auto p-4 sm:p-8 space-y-8">
+      {/* Hero Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-3xl border border-blue-100 shadow-sm gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-blue-900">Welcome, {session.user.name}</h1>
-          <p className="text-blue-700 mt-1">Manage your healthcare appointments easily.</p>
+          <h1 className="text-4xl font-extrabold text-blue-900 tracking-tight">Welcome, {session.user.name}</h1>
+          <p className="text-blue-700 mt-2 text-lg">Manage your healthcare appointments easily and stay up to date.</p>
         </div>
         <Link
           href="/patient/doctors"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium shadow-sm transition"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 whitespace-nowrap"
         >
-          Search Doctors
+          Book New Appointment
         </Link>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Upcoming Appointments</h2>
-          {upcomingAppointments.length === 0 ? (
-            <div className="text-gray-500 text-sm py-4">No upcoming appointments.</div>
-          ) : (
-            <div className="space-y-4">
-              {upcomingAppointments.map((appt) => (
-                <div key={appt.id} className="p-4 border border-gray-100 rounded-xl bg-gray-50">
-                  <div className="font-semibold text-gray-900">{appt.doctor.user.name}</div>
-                  <div className="text-sm text-gray-600">{appt.doctor.specialisation}</div>
-                  <div className="mt-2 text-sm font-medium text-blue-700 bg-blue-100 inline-block px-3 py-1 rounded-md">
-                    {new Date(appt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Previous Appointments</h2>
-          {previousAppointments.length === 0 ? (
-            <div className="text-gray-500 text-sm py-4">No previous appointments.</div>
-          ) : (
-            <div className="space-y-6">
-              {previousAppointments.map((appt) => (
-                <div key={appt.id} className="p-5 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column: Appointments */}
+        <div className="lg:col-span-2 space-y-8">
+          
+          {/* Upcoming Appointments */}
+          <section className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 transition-shadow hover:shadow-md">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              Upcoming Appointments
+            </h2>
+            {upcomingAppointments.length === 0 ? (
+              <EmptyState 
+                title="No upcoming appointments." 
+                description="Book your first appointment to get started." 
+              />
+            ) : (
+              <div className="space-y-4">
+                {upcomingAppointments.map((appt) => (
+                  <div key={appt.id} className="p-5 border border-blue-100 rounded-2xl bg-blue-50/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition hover:bg-blue-50/60">
                     <div>
-                      <div className="font-semibold text-gray-900 text-lg">Dr. {appt.doctor.user.name}</div>
-                      <div className="text-sm text-gray-500 mt-1">
-                        {new Date(appt.slotStart).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                      <div className="font-bold text-gray-900 text-lg">Dr. {appt.doctor.user.name}</div>
+                      <div className="text-sm text-gray-600 font-medium">{appt.doctor.specialisation}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-blue-800 bg-blue-100 px-4 py-2 rounded-lg">
+                        {new Date(appt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
                       </div>
                     </div>
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                      appt.status === "COMPLETED" ? "bg-green-100 text-green-700" :
-                      appt.status === "LEAVE_CANCELLED" ? "bg-red-100 text-red-700" :
-                      "bg-gray-100 text-gray-700"
-                    }`}>
-                      {appt.status}
-                    </span>
                   </div>
+                ))}
+              </div>
+            )}
+          </section>
 
-                  {appt.status === "COMPLETED" && (
-                    <div className="mt-6 space-y-6 pt-4 border-t border-gray-100">
-                      <div>
-                        <h4 className="text-sm font-bold text-gray-900 mb-2">Visit Summary</h4>
-                        {appt.postVisitSummary ? (
-                          <div className="text-sm text-gray-700 bg-blue-50/50 p-4 rounded-lg border border-blue-100 whitespace-pre-wrap">
-                            {appt.postVisitSummary}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-500 italic">AI summary unavailable.</p>
-                        )}
-                      </div>
+          {/* Previous Appointments */}
+          <section className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 transition-shadow hover:shadow-md">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Medical History
+            </h2>
+            {previousAppointments.length === 0 ? (
+              <EmptyState 
+                title="No consultation history yet." 
+                description="Your completed and cancelled appointments will appear here." 
+              />
+            ) : (
+              <div className="space-y-6">
+                {previousAppointments.map((appt) => (
+                  <HistoryCard key={appt.id} appt={appt} />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
 
-                      {appt.prescription && Array.isArray(appt.prescription) && appt.prescription.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-bold text-gray-900 mb-3">Prescription</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {(appt.prescription as unknown as Array<{medicine: string; dosage: string; frequency: string; durationDays: number}>).map((med, idx) => (
-                              <div key={idx} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                                <div className="font-semibold text-gray-800 text-sm mb-1">{med.medicine}</div>
-                                <div className="text-xs text-gray-600 grid grid-cols-2 gap-2 mt-2">
-                                  <div><span className="text-gray-400">Dosage:</span> {med.dosage}</div>
-                                  <div><span className="text-gray-400">Frequency:</span> {med.frequency}</div>
-                                  <div className="col-span-2"><span className="text-gray-400">Duration:</span> {med.durationDays} days</div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+        {/* Right Column: Notifications & Status */}
+        <div className="space-y-8">
+          <section className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 transition-shadow hover:shadow-md">
+            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <svg className="w-5 h-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+              Recent Notifications
+            </h2>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              {notifications.length === 0 ? (
+                <EmptyState 
+                  title="No notifications yet."
+                  description="Updates regarding your appointments will appear here."
+                  className="bg-transparent border-dashed p-4"
+                />
+              ) : (
+                <div className="space-y-4">
+                  {notifications.map((notif) => {
+                    const doctorName = notif.appointment?.doctor?.user?.name || "Unknown Doctor";
+                    
+                    let message = notif.type.replace(/_/g, " ");
+                    if (notif.type === "booking_confirmation") {
+                      message = `Appointment confirmed with Dr. ${doctorName}`;
+                    } else if (notif.type === "consultation_completed") {
+                      message = `Consultation completed with Dr. ${doctorName}`;
+                    } else if (notif.type === "leave_cancellation") {
+                      message = `Appointment cancelled due to doctor's leave`;
+                    }
+
+                    return (
+                      <div key={notif.id} className="p-4 border border-gray-100 rounded-xl bg-gray-50 flex items-start gap-3">
+                        <div className="mt-1">
+                          {notif.type.includes("cancel") ? (
+                            <div className="w-2 h-2 rounded-full bg-red-500" />
+                          ) : notif.type.includes("confirm") ? (
+                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                          ) : (
+                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                          )}
                         </div>
-                      )}
-                    </div>
-                  )}
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900 capitalize">
+                            {message}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {notif.createdAt.toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+              )}
             </div>
-          )}
-        </section>
+          </section>
+        </div>
       </div>
     </div>
   );
