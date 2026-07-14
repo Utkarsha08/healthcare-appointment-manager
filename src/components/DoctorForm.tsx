@@ -21,7 +21,7 @@ export default function DoctorForm({ doctor }: DoctorFormProps) {
             name="name"
             defaultValue={doctor?.user?.name}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900 placeholder:text-gray-400"
           />
         </div>
         <div>
@@ -31,7 +31,7 @@ export default function DoctorForm({ doctor }: DoctorFormProps) {
             name="email"
             defaultValue={doctor?.user?.email}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900 placeholder:text-gray-400"
           />
         </div>
         {!doctor && (
@@ -41,7 +41,7 @@ export default function DoctorForm({ doctor }: DoctorFormProps) {
               type="password"
               name="password"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900 placeholder:text-gray-400"
             />
           </div>
         )}
@@ -52,7 +52,7 @@ export default function DoctorForm({ doctor }: DoctorFormProps) {
             name="specialisation"
             defaultValue={doctor?.specialisation}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900 placeholder:text-gray-400"
           />
         </div>
         <div>
@@ -64,7 +64,7 @@ export default function DoctorForm({ doctor }: DoctorFormProps) {
             required
             min="5"
             step="5"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900 placeholder:text-gray-400"
           />
         </div>
       </div>
@@ -79,14 +79,14 @@ export default function DoctorForm({ doctor }: DoctorFormProps) {
                 type="time"
                 name={`${day}_start`}
                 defaultValue={workingHours[day]?.[0] || ""}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500"
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 text-gray-900 placeholder:text-gray-400"
               />
               <span className="text-gray-500">to</span>
               <input
                 type="time"
                 name={`${day}_end`}
                 defaultValue={workingHours[day]?.[1] || ""}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500"
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 text-gray-900 placeholder:text-gray-400"
               />
             </div>
           ))}

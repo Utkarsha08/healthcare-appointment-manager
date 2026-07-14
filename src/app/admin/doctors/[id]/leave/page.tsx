@@ -33,7 +33,7 @@ export default async function AddLeaveDayPage({ params }: { params: { id: string
               type="date"
               name="date"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900 placeholder:text-gray-400"
             />
           </div>
           <div>
@@ -41,7 +41,7 @@ export default async function AddLeaveDayPage({ params }: { params: { id: string
             <textarea
               name="reason"
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none text-gray-900 placeholder:text-gray-400"
               placeholder="e.g. Sick leave, vacation..."
             ></textarea>
           </div>

@@ -21,7 +21,6 @@ A full-stack, production-ready healthcare platform engineered to streamline clin
 - **Doctor Workspace**: Dedicated portal prioritizing today's active appointments.
 - **Automated Summaries**: Generation of post-visit clinical notes and care instructions using Gemini AI.
 - **Notification Engine**: Atomic, transaction-bound notification system handling booking, completion, and cancellation alerts.
-- **External Ecosystems**: Bi-directional calendar synchronization via the official `googleapis` package, operating entirely independently of core transactions.
 
 ### 🟢 Phase 4: Authentication, Profiles & Production Readiness (Completed)
 - **Universal User Menu**: A unified layout component handles Profile, Logout, and Change Password functionality across all portals seamlessly.
@@ -37,21 +36,8 @@ A full-stack, production-ready healthcare platform engineered to streamline clin
 - **ORM**: Prisma (with two-phase transactional logic to isolate third-party APIs)
 - **Authentication**: NextAuth.js (Credentials Provider)
 - **AI Engine**: Gemini API (`@google/genai`)
-- **External API**: Google Calendar API
 
 ## 📅 Integrations & Setup
-
-### Google Calendar Integration
-
-To enable automatic calendar synchronization for appointments, you must configure the Google Calendar API:
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/) and create a project.
-2. Enable the **Google Calendar API** under "APIs & Services".
-3. Configure the **OAuth Consent Screen**.
-4. Under Credentials, create an **OAuth client ID** (Web Application).
-5. Generate a **Refresh Token** via the [Google OAuth 2.0 Playground](https://developers.google.com/oauthplayground/):
-   - Scope: `https://www.googleapis.com/auth/calendar`
-6. Provide these credentials in your `.env` file (see Environment Variables).
 
 ### Generative AI Integration
 
@@ -71,12 +57,6 @@ NEXTAUTH_SECRET="your-secure-random-string"
 
 # AI Integration
 GEMINI_API_KEY="your-gemini-api-key"
-
-# Google Calendar API
-GOOGLE_CLIENT_ID="your-client-id"
-GOOGLE_CLIENT_SECRET="your-client-secret"
-GOOGLE_REFRESH_TOKEN="your-refresh-token"
-GOOGLE_CALENDAR_ID="primary" # Or a specific calendar ID
 ```
 
 ## 🚀 Installation & Local Execution
@@ -106,6 +86,8 @@ GOOGLE_CALENDAR_ID="primary" # Or a specific calendar ID
 The seed script creates the following demo accounts with the password `password123`:
 
 - **Admin**: `admin@example.com`
-- **Doctor (Cardiology)**: `doctor1@example.com`
-- **Doctor (Dermatology)**: `doctor2@example.com`
-- **Patient**: `patient@example.com` (Or create your own via `/register`!)
+- **Doctor 1**: `doctor1@example.com`
+- **Doctor 2**: `doctor2@example.com`
+- **Doctor 3**: `doctor3@example.com`
+- **Patient 1**: `patient1@example.com` (Or create your own via `/register`!)
+- **Patient 2**: `patient2@example.com`

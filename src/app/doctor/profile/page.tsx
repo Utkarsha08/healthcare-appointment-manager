@@ -140,23 +140,23 @@ export default function DoctorProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                    <input type="text" name="name" value={formData.name} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50" />
+                    <input type="text" name="name" value={formData.name} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
-                    <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50" />
+                    <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Qualification (e.g. MD, MBBS) *</label>
-                    <input type="text" name="qualification" value={formData.qualification} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50" />
+                    <input type="text" name="qualification" value={formData.qualification} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience *</label>
-                    <input type="number" name="experienceYears" value={formData.experienceYears} onChange={handleChange} required min="0" disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50" />
+                    <input type="number" name="experienceYears" value={formData.experienceYears} onChange={handleChange} required min="0" disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">About (Bio)</label>
-                    <textarea name="about" value={formData.about} onChange={handleChange} disabled={isSaving} rows={4} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 resize-none" />
+                    <textarea name="about" value={formData.about} onChange={handleChange} disabled={isSaving} rows={4} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 resize-none text-gray-900 placeholder:text-gray-400" />
                   </div>
                 </div>
               </div>

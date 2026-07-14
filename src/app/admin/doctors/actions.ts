@@ -154,3 +154,55 @@ export async function addLeaveDay(
   revalidatePath("/admin/doctors");
   redirect("/admin/doctors");
 }
+
+export async function deleteDoctor(doctorId: string) {
+  try {
+    const doctor = await prisma.doctor.findUnique({
+      where: { id: doctorId },
+      include: { user: true },
+    });
+
+    if (!doctor) {
+      return { error: "Doctor not found" };
+    }
+
+    // Check for future CONFIRMED appointments
+    const futureConfirmedAppointments = await prisma.appointment.findFirst({
+      where: {
+        doctorId,
+        status: "CONFIRMED",
+        slotStart: {
+          gte: new Date(),
+        },
+      },
+    });
+
+    if (futureConfirmedAppointments) {
+      return { error: "Cannot delete doctor: there are future confirmed appointments." };
+    }
+
+    // Safely delete related records using a transaction
+    await prisma.$transaction([
+      prisma.leaveDay.deleteMany({ where: { doctorId } }),
+      // Also delete any notification associated with the appointments of this doctor
+      // Prisma doesn't support nested deleteMany inside a relation nicely unless cascading is setup, 
+      // but we can delete Notifications where appointment.doctorId = doctorId first
+      prisma.notification.deleteMany({
+        where: {
+          appointment: {
+            doctorId,
+          },
+        },
+      }),
+      prisma.appointment.deleteMany({ where: { doctorId } }),
+      prisma.doctor.delete({ where: { id: doctorId } }),
+      prisma.user.delete({ where: { id: doctor.userId } }),
+    ]);
+
+    revalidatePath("/admin/doctors");
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Error deleting doctor:", error);
+    return { error: "Failed to delete doctor. Please try again." };
+  }
+}

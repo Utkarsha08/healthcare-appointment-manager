@@ -129,7 +129,10 @@ export const appointmentService = {
         tx,
         appointmentId,
         confirmedAppt.patient.email || "",
-        confirmedAppt.doctor.user.email || ""
+        confirmedAppt.doctor.user.email || "",
+        confirmedAppt.doctor.user.name || "Doctor",
+        confirmedAppt.patient.name || "Patient",
+        new Date(confirmedAppt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
       );
 
       return updatedAppt;
@@ -137,4 +140,54 @@ export const appointmentService = {
 
     return finalAppt;
   },
+
+  async cancelBooking(appointmentId: string, patientId: string) {
+    const appt = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        doctor: { include: { user: true } },
+        patient: true,
+      },
+    });
+
+    if (!appt || appt.patientId !== patientId) {
+      throw new Error("Appointment not found or unauthorized");
+    }
+
+    if (appt.status !== "CONFIRMED") {
+      throw new Error("Can only cancel confirmed appointments");
+    }
+
+    const cancelledAppt = await prisma.$transaction(async (tx) => {
+      const updated = await tx.appointment.update({
+        where: { id: appointmentId },
+        data: { status: "CANCELLED" },
+      });
+
+      const { notificationService } = await import("./notificationService");
+      
+      const dateStr = new Date(appt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+      
+      await notificationService.createPatientCancellationNotification(
+        tx,
+        appointmentId,
+        appt.doctor.user.email || "",
+        appt.patient.name || "Patient",
+        dateStr
+      );
+
+      return updated;
+    });
+
+    // Delete calendar events
+    if (appt.googleEventIdPatient || appt.googleEventIdDoctor) {
+      const { calendarService } = await import("./calendarService");
+      await calendarService.deleteCalendarEvents(
+        appt.googleEventIdPatient || null,
+        appt.googleEventIdDoctor || null
+      );
+    }
+
+    return cancelledAppt;
+  }
 };

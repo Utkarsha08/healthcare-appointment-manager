@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HistoryCard } from "@/components/HistoryCard";
 import { UserMenu } from "@/components/UserMenu";
+import CancelAppointmentButton from "@/components/CancelAppointmentButton";
 
 export default async function PatientPage() {
   const session = await getServerSession(authOptions);
@@ -113,6 +114,9 @@ export default async function PatientPage() {
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         {new Date(appt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
                       </div>
+                      {appt.status === "CONFIRMED" && (
+                        <CancelAppointmentButton appointmentId={appt.id} />
+                      )}
                     </div>
                   </div>
                 ))}
@@ -158,23 +162,14 @@ export default async function PatientPage() {
               ) : (
                 <div className="space-y-4">
                   {notifications.map((notif) => {
-                    const doctorName = notif.appointment?.doctor?.user?.name || "Unknown Doctor";
-
-                    let message = notif.type.replace(/_/g, " ");
-                    if (notif.type === "booking_confirmation") {
-                      message = `Appointment confirmed with ${doctorName}`;
-                    } else if (notif.type === "consultation_completed") {
-                      message = `Consultation completed with ${doctorName}`;
-                    } else if (notif.type === "leave_cancellation") {
-                      message = `Appointment cancelled because your doctor is unavailable`;
-                    }
+                    const message = notif.type.replace(/_/g, " ");
 
                     return (
                       <div key={notif.id} className="p-4 border border-gray-100 rounded-xl bg-gray-50 flex items-start gap-3">
                         <div className="mt-1">
-                          {notif.type.includes("cancel") ? (
+                          {notif.type.toLowerCase().includes("cancel") ? (
                             <div className="w-2 h-2 rounded-full bg-red-500" />
-                          ) : notif.type.includes("confirm") ? (
+                          ) : notif.type.toLowerCase().includes("confirm") ? (
                             <div className="w-2 h-2 rounded-full bg-green-500" />
                           ) : (
                             <div className="w-2 h-2 rounded-full bg-blue-500" />

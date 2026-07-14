@@ -5,19 +5,22 @@ export const notificationService = {
     tx: Prisma.TransactionClient,
     appointmentId: string,
     patientEmail: string,
-    doctorEmail: string
+    doctorEmail: string,
+    doctorName?: string,
+    patientName?: string,
+    dateStr?: string,
   ) {
     const notifications = [
       {
         appointmentId,
-        type: "booking_confirmation",
-        recipient: patientEmail,
+        type: `New appointment booked for ${dateStr || 'upcoming date'}`,
+        recipient: doctorEmail,
         status: "PENDING" as const,
       },
       {
         appointmentId,
-        type: "booking_confirmation",
-        recipient: doctorEmail,
+        type: `Appointment confirmed with Dr. ${doctorName || 'your doctor'}`,
+        recipient: patientEmail,
         status: "PENDING" as const,
       },
     ];
@@ -35,7 +38,7 @@ export const notificationService = {
     await tx.notification.create({
       data: {
         appointmentId,
-        type: "consultation_completed",
+        type: "Consultation completed",
         recipient: patientEmail,
         status: "PENDING" as const,
       },
@@ -49,7 +52,7 @@ export const notificationService = {
   ) {
     const notifications = appointmentIds.map((id, index) => ({
       appointmentId: id,
-      type: "leave_cancellation",
+      type: "Leave scheduled: Your appointment has been cancelled",
       recipient: patientEmails[index],
       status: "PENDING" as const,
     }));
@@ -60,4 +63,22 @@ export const notificationService = {
       });
     }
   },
+
+  async createPatientCancellationNotification(
+    tx: Prisma.TransactionClient,
+    appointmentId: string,
+    doctorEmail: string,
+    patientName: string,
+    dateStr: string
+  ) {
+    await tx.notification.create({
+      data: {
+        appointmentId,
+        type: `${patientName} cancelled the appointment scheduled for ${dateStr}.`,
+        recipient: doctorEmail,
+        status: "PENDING" as const,
+      },
+    });
+  },
 };
+

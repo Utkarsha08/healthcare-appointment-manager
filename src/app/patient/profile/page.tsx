@@ -4,18 +4,18 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { UserMenu } from "@/components/UserMenu";
-import { Alert } from "@/components/ui/Alert";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import Link from "next/link";
+import DeletePatientButton from "@/components/DeletePatientButton";
+import { useToast } from "@/lib/hooks/useToast";
 
 export default function PatientProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { success, error: toastError } = useToast();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -49,13 +49,13 @@ export default function PatientProfilePage() {
           setIsLoading(false);
         })
         .catch(() => {
-          setError("Failed to load profile data");
+          toastError("Failed to load profile data");
           setIsLoading(false);
         });
     } else if (status === "authenticated") {
       router.push("/");
     }
-  }, [status, router, session]);
+  }, [status, router, session, toastError]);
 
   const calculateAge = (dobString: string) => {
     if (!dobString) return "--";
@@ -72,8 +72,6 @@ export default function PatientProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    setError("");
-    setSuccess("");
 
     try {
       const res = await fetch("/api/user/profile", {
@@ -87,9 +85,9 @@ export default function PatientProfilePage() {
         throw new Error(data.error || "Failed to update profile");
       }
 
-      setSuccess("Profile updated successfully");
+      success("Profile updated successfully");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred");
+      toastError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setIsSaving(false);
     }
@@ -119,9 +117,6 @@ export default function PatientProfilePage() {
       </div>
 
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
-        {error && <Alert type="error" message={error} className="mb-6" />}
-        {success && <Alert type="success" message={success} className="mb-6" />}
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Read-only sidebar */}
           <div className="space-y-6">
@@ -154,15 +149,15 @@ export default function PatientProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                    <input type="text" name="name" value={formData.name} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50" />
+                    <input type="text" name="name" value={formData.name} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
-                    <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50" />
+                    <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Gender *</label>
-                    <select name="gender" value={formData.gender} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 bg-white">
+                    <select name="gender" value={formData.gender} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 bg-white text-gray-900">
                       <option value="">Select Gender</option>
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
@@ -172,11 +167,11 @@ export default function PatientProfilePage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
-                    <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50" />
+                    <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Blood Group (Optional)</label>
-                    <select name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 bg-white">
+                    <select name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 bg-white text-gray-900">
                       <option value="">Select Blood Group</option>
                       <option value="A+">A+</option><option value="A-">A-</option>
                       <option value="B+">B+</option><option value="B-">B-</option>
@@ -187,7 +182,7 @@ export default function PatientProfilePage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Address (Optional)</label>
-                  <input type="text" name="address" value={formData.address} onChange={handleChange} disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50" />
+                  <input type="text" name="address" value={formData.address} onChange={handleChange} disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400" />
                 </div>
               </div>
 
@@ -196,11 +191,11 @@ export default function PatientProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name (Optional)</label>
-                    <input type="text" name="emergencyContactName" value={formData.emergencyContactName} onChange={handleChange} disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50" />
+                    <input type="text" name="emergencyContactName" value={formData.emergencyContactName} onChange={handleChange} disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Contact Phone (Optional)</label>
-                    <input type="tel" name="emergencyContactPhone" value={formData.emergencyContactPhone} onChange={handleChange} disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50" />
+                    <input type="tel" name="emergencyContactPhone" value={formData.emergencyContactPhone} onChange={handleChange} disabled={isSaving} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400" />
                   </div>
                 </div>
               </div>
@@ -213,6 +208,13 @@ export default function PatientProfilePage() {
               </div>
 
             </form>
+
+            <div className="mt-12 pt-8 border-t border-gray-200">
+              <h3 className="font-semibold text-gray-900 mb-2">Danger Zone</h3>
+              <p className="text-gray-500 text-sm mb-4">Once you delete your account, there is no going back. Please be certain.</p>
+              {session?.user && <DeletePatientButton userId={session.user.id} />}
+            </div>
+
           </div>
         </div>
       </div>

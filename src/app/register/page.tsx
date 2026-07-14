@@ -92,7 +92,7 @@ export default function RegisterPage() {
                   name="name"
                   required
                   disabled={isLoading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
               <div>
@@ -102,7 +102,7 @@ export default function RegisterPage() {
                   name="email"
                   required
                   disabled={isLoading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
               <div>
@@ -113,7 +113,7 @@ export default function RegisterPage() {
                   required
                   minLength={8}
                   disabled={isLoading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
               <div>
@@ -124,7 +124,7 @@ export default function RegisterPage() {
                   required
                   minLength={8}
                   disabled={isLoading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
             </div>
@@ -140,7 +140,7 @@ export default function RegisterPage() {
                   name="dateOfBirth"
                   required
                   disabled={isLoading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
               <div>
@@ -165,7 +165,7 @@ export default function RegisterPage() {
                   name="phone"
                   required
                   disabled={isLoading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
               <div>
@@ -192,7 +192,7 @@ export default function RegisterPage() {
                   type="text"
                   name="address"
                   disabled={isLoading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
             </div>
@@ -207,7 +207,7 @@ export default function RegisterPage() {
                   type="text"
                   name="emergencyContactName"
                   disabled={isLoading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
               <div>
@@ -216,7 +216,7 @@ export default function RegisterPage() {
                   type="tel"
                   name="emergencyContactPhone"
                   disabled={isLoading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
             </div>
