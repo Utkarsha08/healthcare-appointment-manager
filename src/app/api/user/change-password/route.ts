@@ -60,6 +60,14 @@ export async function POST(req: Request) {
       data: { passwordHash },
     });
 
+    const { jobService } = await import("@/lib/services/jobService");
+    await jobService.queueEmail("PASSWORD_CHANGED", {
+      userEmail: user.email,
+      userName: user.name,
+    });
+
+    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/cron/process-jobs`).catch(() => {});
+
     return NextResponse.json({ message: "Password changed successfully" });
   } catch (error) {
     console.error("Change password error:", error);

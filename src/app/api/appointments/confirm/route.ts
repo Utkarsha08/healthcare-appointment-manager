@@ -21,8 +21,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json(appointment);
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "EXPIRED") {
-      return NextResponse.json({ error: "Your reservation has expired." }, { status: 410 });
+    if (error instanceof Error) {
+      if (error.message === "ALREADY_CONFIRMED") {
+        return NextResponse.json({ message: "Appointment is already confirmed.", alreadyConfirmed: true }, { status: 200 });
+      }
+      if (error.message === "EXPIRED") {
+        return NextResponse.json({ error: "Your reservation has expired." }, { status: 410 });
+      }
     }
     console.error("Error confirming booking:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

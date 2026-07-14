@@ -113,3 +113,22 @@ enum NotificationStatus {
   SENT
   FAILED
 }
+
+model BackgroundJob {
+  id          String   @id @default(cuid())
+  type        String   // "EMAIL_RETRY", "APPOINTMENT_REMINDER", "MEDICATION_REMINDER"
+  payload     Json     // Job specific data
+  status      JobStatus @default(PENDING)
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(3)
+  executeAt   DateTime @default(now())
+  lastError   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum JobStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}

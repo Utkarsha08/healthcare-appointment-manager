@@ -112,6 +112,11 @@ export async function addLeaveDay(
       },
       include: {
         patient: true,
+        doctor: {
+          include: {
+            user: true,
+          }
+        },
       },
     });
 
@@ -133,12 +138,29 @@ export async function addLeaveDay(
         appointmentsToCancel.map((a) => a.id),
         appointmentsToCancel.map((a) => a.patient.email || "")
       );
+
+      // 5. Queue cancellation emails
+      const { jobService } = await import("@/lib/services/jobService");
+      const doctorName = appointmentsToCancel[0]?.doctor?.user?.name || "your doctor";
+      
+      for (const appt of appointmentsToCancel) {
+        if (appt.patient.email) {
+          const dateStr = new Date(appt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+          await jobService.queueEmail("APPOINTMENT_CANCELLED", {
+            recipientEmail: appt.patient.email,
+            patientName: appt.patient.name,
+            doctorName,
+            dateStr,
+            isForDoctor: false
+          }, tx);
+        }
+      }
     }
 
     return appointmentsToCancel;
   });
 
-  // 5. Delete Calendar Events outside transaction
+  // 6. Delete Calendar Events outside transaction
   if (affectedAppointments.length > 0) {
     const { calendarService } = await import("@/lib/services/calendarService");
     for (const appt of affectedAppointments) {
@@ -150,6 +172,8 @@ export async function addLeaveDay(
       }
     }
   }
+
+  fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/cron/process-jobs`).catch(() => {});
 
   revalidatePath("/admin/doctors");
   redirect("/admin/doctors");

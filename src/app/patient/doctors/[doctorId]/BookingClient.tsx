@@ -67,7 +67,7 @@ export default function BookingClient({ doctorId, slotDurationMin }: { doctorId:
 
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!heldAppointmentId || !symptoms) return;
+    if (!heldAppointmentId || !symptoms || actionLoading) return;
 
     setActionLoading(true);
     setErrorMsg(null);

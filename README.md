@@ -57,6 +57,13 @@ NEXTAUTH_SECRET="your-secure-random-string"
 
 # AI Integration
 GEMINI_API_KEY="your-gemini-api-key"
+
+# Email Configuration (Nodemailer)
+SMTP_HOST="smtp.example.com"
+SMTP_PORT="587"
+SMTP_USER="your-email@example.com"
+SMTP_PASS="your-email-password"
+SMTP_FROM='"Healthcare Manager" <noreply@example.com>'
 ```
 
 ## 🚀 Installation & Local Execution

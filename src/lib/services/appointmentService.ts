@@ -28,6 +28,10 @@ export const appointmentService = {
 
     if (!initialAppt) throw new Error("Appointment not found");
 
+    if (initialAppt.status === "CONFIRMED") {
+      throw new Error("ALREADY_CONFIRMED");
+    }
+
     if (initialAppt.status !== "HELD") {
       throw new Error("Appointment is no longer in HELD status");
     }
@@ -40,9 +44,20 @@ export const appointmentService = {
     let preVisitSummary = null;
     try {
       preVisitSummary = await aiProvider.generatePreVisitSummary(symptoms);
-    } catch (error) {
-      // If Gemini fails, use null
-      console.error("Gemini failed during confirmBooking:", error);
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      const isTransient = 
+        errMsg.includes("429") || 
+        errMsg.includes("503") || 
+        errMsg.includes("RESOURCE_EXHAUSTED") || 
+        errMsg.includes("UNAVAILABLE");
+
+      if (isTransient) {
+        console.warn(`[AI Warning] Gemini is temporarily unavailable (Quota/Transient). Proceeding without AI summary.`);
+      } else {
+        console.error("Gemini failed during confirmBooking:", error);
+      }
+      
       preVisitSummary = null;
     }
 
@@ -56,6 +71,10 @@ export const appointmentService = {
       if (!appt) throw new Error("Appointment not found");
 
       // Verify it is still HELD.
+      if (appt.status === "CONFIRMED") {
+        throw new Error("ALREADY_CONFIRMED");
+      }
+
       if (appt.status !== "HELD") {
         throw new Error("Appointment is no longer in HELD status");
       }
@@ -135,8 +154,21 @@ export const appointmentService = {
         new Date(confirmedAppt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
       );
 
+      // Queue email notification (never breaks flow if it fails because it's recorded in BackgroundJob)
+      const { jobService } = await import("./jobService");
+      await jobService.queueEmail("APPOINTMENT_CONFIRMED", {
+        patientEmail: confirmedAppt.patient.email,
+        patientName: confirmedAppt.patient.name,
+        doctorName: confirmedAppt.doctor.user.name,
+        dateStr: new Date(confirmedAppt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+      }, tx);
+
       return updatedAppt;
     });
+
+    // We can also fire an asynchronous, background fetch to our cron endpoint to process it immediately,
+    // or just let the actual cron handle it. For immediate best-effort delivery:
+    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/cron/process-jobs`).catch(() => {});
 
     return finalAppt;
   },
@@ -176,6 +208,16 @@ export const appointmentService = {
         dateStr
       );
 
+      // Queue cancellation email for doctor
+      const { jobService } = await import("./jobService");
+      await jobService.queueEmail("APPOINTMENT_CANCELLED", {
+        recipientEmail: appt.doctor.user.email,
+        patientName: appt.patient.name,
+        doctorName: appt.doctor.user.name,
+        dateStr,
+        isForDoctor: true
+      }, tx);
+
       return updated;
     });
 
@@ -187,6 +229,8 @@ export const appointmentService = {
         appt.googleEventIdDoctor || null
       );
     }
+
+    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/cron/process-jobs`).catch(() => {});
 
     return cancelledAppt;
   }
