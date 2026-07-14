@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { doctorService, TodayAppointment } from "@/lib/services/doctorService";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { UserMenu } from "@/components/UserMenu";
 import { Badge, BadgeVariant } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -43,7 +44,7 @@ function AppointmentCard({ appointment }: { appointment: TodayAppointment }) {
               <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chief Complaint</h4>
               <p className="text-sm text-gray-800 mt-1">{appointment.preVisitSummary.chiefComplaint}</p>
             </div>
-            
+
             {appointment.symptoms && (
               <div>
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Symptoms</h4>
@@ -85,7 +86,7 @@ export default async function DoctorDashboard() {
   const email = session.user.email as string;
 
   const appointments = await doctorService.getTodayAppointments(userId);
-  
+
   const completedCount = appointments.filter(a => a.status === "COMPLETED").length;
   const remainingCount = appointments.filter(a => a.status === "CONFIRMED").length;
   const totalCount = appointments.length;
@@ -99,7 +100,19 @@ export default async function DoctorDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
+        {/* Top Header */}
+        <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-8">
+          <div className="text-xl font-bold text-gray-900 tracking-tight">
+            <span className="text-blue-600">Doctor</span>Portal
+          </div>
+          <UserMenu user={{
+            name: session.user.name ?? "User",
+            email: session.user.email ?? "",
+            role: session.user.role as "ADMIN" | "DOCTOR" | "PATIENT",
+          }} />
+        </div>
+
         {/* Header Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
@@ -111,7 +124,7 @@ export default async function DoctorDashboard() {
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Completed Today</p>
@@ -142,7 +155,7 @@ export default async function DoctorDashboard() {
             </div>
 
             {appointments.length === 0 ? (
-              <EmptyState 
+              <EmptyState
                 title="No Appointments"
                 description="You have no appointments scheduled for today. Enjoy your day!"
               />
@@ -161,10 +174,10 @@ export default async function DoctorDashboard() {
               <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Notifications</h2>
               <p className="text-gray-500 mt-1">Recent updates and alerts.</p>
             </div>
-            
+
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               {notifications.length === 0 ? (
-                <EmptyState 
+                <EmptyState
                   title="No Notifications"
                   description="You're all caught up."
                   className="bg-transparent border-dashed p-4"

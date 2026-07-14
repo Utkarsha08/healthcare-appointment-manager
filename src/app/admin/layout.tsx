@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
+import { UserMenu } from "@/components/UserMenu";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -26,13 +27,18 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             Doctors
           </Link>
         </nav>
-        <div className="p-4 border-t border-slate-700">
-          <p className="text-sm">{session.user.name}</p>
-          <p className="text-xs text-slate-400 truncate">{session.user.email}</p>
-        </div>
       </aside>
-      <main className="flex-1 p-8 overflow-y-auto">
-        {children}
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+        <header className="bg-white border-b border-gray-100 p-4 flex justify-end shadow-sm">
+          <UserMenu user={{
+            name: session.user.name ?? "User",
+            email: session.user.email ?? "",
+            role: session.user.role as "ADMIN" | "DOCTOR" | "PATIENT",
+          }} />
+        </header>
+        <div className="flex-1 p-8 overflow-y-auto">
+          {children}
+        </div>
       </main>
     </div>
   );

@@ -23,6 +23,12 @@ A full-stack, production-ready healthcare platform engineered to streamline clin
 - **Notification Engine**: Atomic, transaction-bound notification system handling booking, completion, and cancellation alerts.
 - **External Ecosystems**: Bi-directional calendar synchronization via the official `googleapis` package, operating entirely independently of core transactions.
 
+### 🟢 Phase 4: Authentication, Profiles & Production Readiness (Completed)
+- **Universal User Menu**: A unified layout component handles Profile, Logout, and Change Password functionality across all portals seamlessly.
+- **Extended User Schemas**: The `User` and `Doctor` models now directly incorporate optional demographic and professional fields, avoiding the need for unnecessary related models.
+- **Profile Management**: Editable profiles for Patients, Doctors, and Admins.
+- **Security**: Dedicated `/change-password` route with bcrypt hashing and current password verification.
+
 ## 🛠️ Architecture & Tech Stack
 
 - **Framework**: Next.js 14 (App Router)

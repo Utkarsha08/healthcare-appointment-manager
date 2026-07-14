@@ -53,6 +53,11 @@ async function main() {
           create: {
             specialisation: doc.specialisation,
             workingHours: doc.workingHours,
+            phone: "+1234567890",
+            experienceYears: 10,
+            qualification: "MD",
+            consultationFee: 150,
+            about: "Experienced specialist committed to patient care.",
           },
         },
       },
@@ -74,6 +79,13 @@ async function main() {
         name: p.name,
         passwordHash,
         role: Role.PATIENT,
+        dateOfBirth: new Date("1990-01-01"),
+        gender: "Male",
+        phone: "+0987654321",
+        bloodGroup: "O+",
+        address: "123 Main St, Anytown",
+        emergencyContactName: "Emergency Contact",
+        emergencyContactPhone: "+1122334455",
       },
     });
   }

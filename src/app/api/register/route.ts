@@ -4,11 +4,15 @@ import bcrypt from "bcrypt";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { 
+      name, email, password, 
+      dateOfBirth, gender, phone, 
+      bloodGroup, address, emergencyContactName, emergencyContactPhone 
+    } = await req.json();
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !dateOfBirth || !gender || !phone) {
       return NextResponse.json(
-        { error: "All fields are required" },
+        { error: "Required fields are missing" },
         { status: 400 }
       );
     }
@@ -47,6 +51,13 @@ export async function POST(req: Request) {
         email,
         passwordHash,
         role: "PATIENT",
+        dateOfBirth: new Date(dateOfBirth),
+        gender,
+        phone,
+        bloodGroup: bloodGroup || null,
+        address: address || null,
+        emergencyContactName: emergencyContactName || null,
+        emergencyContactPhone: emergencyContactPhone || null,
       },
     });
 

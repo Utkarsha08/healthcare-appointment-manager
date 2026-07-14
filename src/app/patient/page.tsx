@@ -5,6 +5,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HistoryCard } from "@/components/HistoryCard";
+import { UserMenu } from "@/components/UserMenu";
 
 export default async function PatientPage() {
   const session = await getServerSession(authOptions);
@@ -52,6 +53,18 @@ export default async function PatientPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-8 space-y-8">
+      {/* Top Header */}
+      <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <div className="text-xl font-bold text-gray-900 tracking-tight">
+          <span className="text-blue-600">Health</span>Care
+        </div>
+        <UserMenu user={{
+          name: session.user.name ?? "User",
+          email: session.user.email ?? "",
+          role: session.user.role as "ADMIN" | "DOCTOR" | "PATIENT",
+        }} />
+      </div>
+
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-3xl border border-blue-100 shadow-sm gap-6">
         <div>
@@ -69,7 +82,7 @@ export default async function PatientPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Appointments */}
         <div className="lg:col-span-2 space-y-8">
-          
+
           {/* Upcoming Appointments */}
           <section className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 transition-shadow hover:shadow-md">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -77,9 +90,9 @@ export default async function PatientPage() {
               Upcoming Appointments
             </h2>
             {upcomingAppointments.length === 0 ? (
-              <EmptyState 
-                title="No upcoming appointments." 
-                description="Book your first appointment to get started." 
+              <EmptyState
+                title="No upcoming appointments."
+                description="Book your first appointment to get started."
               />
             ) : (
               <div className="space-y-4">
@@ -107,9 +120,9 @@ export default async function PatientPage() {
               Medical History
             </h2>
             {previousAppointments.length === 0 ? (
-              <EmptyState 
-                title="No consultation history yet." 
-                description="Your completed and cancelled appointments will appear here." 
+              <EmptyState
+                title="No consultation history yet."
+                description="Your completed and cancelled appointments will appear here."
               />
             ) : (
               <div className="space-y-6">
@@ -130,7 +143,7 @@ export default async function PatientPage() {
             </h2>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               {notifications.length === 0 ? (
-                <EmptyState 
+                <EmptyState
                   title="No notifications yet."
                   description="Updates regarding your appointments will appear here."
                   className="bg-transparent border-dashed p-4"
@@ -139,14 +152,14 @@ export default async function PatientPage() {
                 <div className="space-y-4">
                   {notifications.map((notif) => {
                     const doctorName = notif.appointment?.doctor?.user?.name || "Unknown Doctor";
-                    
+
                     let message = notif.type.replace(/_/g, " ");
                     if (notif.type === "booking_confirmation") {
-                      message = `Appointment confirmed with Dr. ${doctorName}`;
+                      message = `Appointment confirmed with ${doctorName}`;
                     } else if (notif.type === "consultation_completed") {
-                      message = `Consultation completed with Dr. ${doctorName}`;
+                      message = `Consultation completed with ${doctorName}`;
                     } else if (notif.type === "leave_cancellation") {
-                      message = `Appointment cancelled due to doctor's leave`;
+                      message = `Appointment cancelled because your doctor is unavailable`;
                     }
 
                     return (

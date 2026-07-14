@@ -35,7 +35,7 @@ export const doctorService = {
         doctor: {
           userId,
         },
-        status: { in: ["CONFIRMED", "HELD", "COMPLETED", "CANCELLED", "LEAVE_CANCELLED"] },
+        status: { in: ["CONFIRMED", "COMPLETED", "CANCELLED"] },
         slotStart: {
           gte: todayStart,
           lte: todayEnd,

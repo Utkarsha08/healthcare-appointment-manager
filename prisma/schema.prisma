@@ -13,6 +13,13 @@ model User {
   passwordHash  String
   name          String
   role          Role
+  dateOfBirth   DateTime?
+  gender        String?
+  phone         String?
+  bloodGroup    String?
+  address       String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
   createdAt     DateTime      @default(now())
   appointments  Appointment[] @relation("PatientAppointments")
   doctorProfile Doctor?
@@ -22,6 +29,11 @@ model Doctor {
   id              String        @id @default(cuid())
   userId          String        @unique
   specialisation  String
+  qualification   String?
+  experienceYears Int?
+  consultationFee Int?
+  phone           String?
+  about           String?
   slotDurationMin Int           @default(20)
   workingHours    Json
   appointments    Appointment[]
