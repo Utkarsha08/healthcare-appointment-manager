@@ -19,21 +19,39 @@ export async function GET() {
         if (job.type === "EMAIL_RETRY") {
           const p = job.payload as {
             emailType: string;
-            patientEmail: string;
+            patientEmail?: string;
             patientName: string;
             doctorName: string;
             dateStr: string;
-            recipientEmail: string;
-            isForDoctor: boolean;
-            userEmail: string;
-            userName: string;
+            recipientEmail?: string;
+            isForDoctor?: boolean;
+            userEmail?: string;
+            userName?: string;
+            doctorSpecialization?: string;
+            symptoms?: string;
+            oldDateStr?: string;
+            newDateStr?: string;
+            appointmentId?: string;
+            targetSlotStart?: string;
           };
           if (p.emailType === "APPOINTMENT_CONFIRMED") {
-            await emailService.sendAppointmentConfirmation(p.patientEmail, p.patientName, p.doctorName, p.dateStr);
+            await emailService.sendAppointmentConfirmation(p.recipientEmail!, p.patientName, p.doctorName, p.doctorSpecialization!, p.dateStr, p.symptoms, p.isForDoctor!);
           } else if (p.emailType === "APPOINTMENT_CANCELLED") {
-            await emailService.sendAppointmentCancellation(p.recipientEmail, p.patientName, p.doctorName, p.dateStr, p.isForDoctor);
+            await emailService.sendAppointmentCancellation(p.recipientEmail!, p.patientName, p.doctorName, p.dateStr, p.isForDoctor!);
+          } else if (p.emailType === "APPOINTMENT_RESCHEDULED") {
+            await emailService.sendAppointmentRescheduled(p.recipientEmail!, p.patientName, p.doctorName, p.oldDateStr!, p.newDateStr!, p.isForDoctor!);
+          } else if (p.emailType === "APPOINTMENT_REMINDER") {
+            const { prisma } = await import("@/lib/prisma");
+            const appt = await prisma.appointment.findUnique({ where: { id: p.appointmentId! } });
+            
+            // Stateless validation: Only send if appointment is still CONFIRMED and slotStart hasn't changed.
+            if (appt && appt.status === "CONFIRMED" && appt.slotStart.toISOString() === p.targetSlotStart) {
+              await emailService.sendAppointmentReminder(p.recipientEmail!, p.patientName, p.doctorName, p.dateStr, p.isForDoctor!);
+            } else {
+              console.log(`Skipping outdated reminder for appointment ${p.appointmentId}`);
+            }
           } else if (p.emailType === "PASSWORD_CHANGED") {
-            await emailService.sendPasswordChangeEmail(p.userEmail, p.userName);
+            await emailService.sendPasswordChangeEmail(p.userEmail!, p.userName!);
           } else {
             console.warn(`Unknown emailType ${p.emailType} for job ${job.id}`);
           }
@@ -107,8 +125,6 @@ export async function GET() {
               await calendarService.updatePatientCalendarEvent(p.patientId, p.eventId, details);
             }
           }
-        } else if (job.type === "APPOINTMENT_REMINDER") {
-          // Future implementation
         } else if (job.type === "MEDICATION_REMINDER") {
           // Future implementation
         } else {

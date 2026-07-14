@@ -5,12 +5,14 @@ export const jobService = {
   async queueEmail(
     type: string, 
     payload: Record<string, unknown>, 
-    tx?: Prisma.TransactionClient
+    tx?: Prisma.TransactionClient,
+    executeAt?: Date
   ) {
     const data = {
       type: "EMAIL_RETRY",
       payload: { emailType: type, ...payload } as Prisma.InputJsonValue,
       status: "PENDING" as const,
+      executeAt: executeAt || new Date(),
     };
     
     const db = tx || prisma;

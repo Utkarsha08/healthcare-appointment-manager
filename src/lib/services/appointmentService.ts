@@ -117,13 +117,56 @@ export const appointmentService = {
 
       const { jobService } = await import("./jobService");
       
-      // Queue email notification
+      const dateStr = new Date(updatedAppt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+
+      // Queue confirmation email for PATIENT
       await jobService.queueEmail("APPOINTMENT_CONFIRMED", {
-        patientEmail: updatedAppt.patient.email,
+        recipientEmail: updatedAppt.patient.email,
         patientName: updatedAppt.patient.name,
         doctorName: updatedAppt.doctor.user.name,
-        dateStr: new Date(updatedAppt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+        doctorSpecialization: updatedAppt.doctor.specialisation,
+        symptoms: updatedAppt.symptoms,
+        dateStr,
+        isForDoctor: false
       }, tx);
+
+      // Queue confirmation email for DOCTOR
+      await jobService.queueEmail("APPOINTMENT_CONFIRMED", {
+        recipientEmail: updatedAppt.doctor.user.email,
+        patientName: updatedAppt.patient.name,
+        doctorName: updatedAppt.doctor.user.name,
+        doctorSpecialization: updatedAppt.doctor.specialisation,
+        symptoms: updatedAppt.symptoms,
+        dateStr,
+        isForDoctor: true
+      }, tx);
+
+      // Queue reminder emails (execute 24 hours before slotStart)
+      const reminderLeadTimeHours = parseInt(process.env.REMINDER_LEAD_TIME_HOURS || "24", 10);
+      const executeAt = new Date(updatedAppt.slotStart.getTime() - reminderLeadTimeHours * 60 * 60 * 1000);
+      
+      // Only queue if it's in the future
+      if (executeAt > new Date()) {
+        await jobService.queueEmail("APPOINTMENT_REMINDER", {
+          appointmentId,
+          targetSlotStart: updatedAppt.slotStart.toISOString(),
+          recipientEmail: updatedAppt.patient.email,
+          patientName: updatedAppt.patient.name,
+          doctorName: updatedAppt.doctor.user.name,
+          dateStr,
+          isForDoctor: false
+        }, tx, executeAt);
+
+        await jobService.queueEmail("APPOINTMENT_REMINDER", {
+          appointmentId,
+          targetSlotStart: updatedAppt.slotStart.toISOString(),
+          recipientEmail: updatedAppt.doctor.user.email,
+          patientName: updatedAppt.patient.name,
+          doctorName: updatedAppt.doctor.user.name,
+          dateStr,
+          isForDoctor: true
+        }, tx, executeAt);
+      }
 
       // Queue calendar sync for DOCTOR
       await jobService.queueCalendarSync("CREATE", {
@@ -200,7 +243,7 @@ export const appointmentService = {
         dateStr
       );
 
-      // Queue cancellation email for doctor
+      // Queue cancellation email for DOCTOR
       const { jobService } = await import("./jobService");
       await jobService.queueEmail("APPOINTMENT_CANCELLED", {
         recipientEmail: appt.doctor.user.email,
@@ -208,6 +251,15 @@ export const appointmentService = {
         doctorName: appt.doctor.user.name,
         dateStr,
         isForDoctor: true
+      }, tx);
+
+      // Queue cancellation email for PATIENT
+      await jobService.queueEmail("APPOINTMENT_CANCELLED", {
+        recipientEmail: appt.patient.email,
+        patientName: appt.patient.name,
+        doctorName: appt.doctor.user.name,
+        dateStr,
+        isForDoctor: false
       }, tx);
 
       // Queue calendar sync for deletion (Doctor)
@@ -315,6 +367,55 @@ export const appointmentService = {
       });
 
       const { jobService } = await import("./jobService");
+
+      const oldDateStr = new Date(appt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+      const newDateStr = new Date(newSlotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+
+      // Queue reschedule email for PATIENT
+      await jobService.queueEmail("APPOINTMENT_RESCHEDULED", {
+        recipientEmail: appt.patient.email,
+        patientName: appt.patient.name,
+        doctorName: appt.doctor.user.name,
+        oldDateStr,
+        newDateStr,
+        isForDoctor: false
+      }, tx);
+
+      // Queue reschedule email for DOCTOR
+      await jobService.queueEmail("APPOINTMENT_RESCHEDULED", {
+        recipientEmail: appt.doctor.user.email,
+        patientName: appt.patient.name,
+        doctorName: appt.doctor.user.name,
+        oldDateStr,
+        newDateStr,
+        isForDoctor: true
+      }, tx);
+
+      // Queue new reminder emails
+      const reminderLeadTimeHours = parseInt(process.env.REMINDER_LEAD_TIME_HOURS || "24", 10);
+      const executeAt = new Date(newSlotStart.getTime() - reminderLeadTimeHours * 60 * 60 * 1000);
+      
+      if (executeAt > new Date()) {
+        await jobService.queueEmail("APPOINTMENT_REMINDER", {
+          appointmentId,
+          targetSlotStart: newSlotStart.toISOString(),
+          recipientEmail: appt.patient.email,
+          patientName: appt.patient.name,
+          doctorName: appt.doctor.user.name,
+          dateStr: newDateStr,
+          isForDoctor: false
+        }, tx, executeAt);
+
+        await jobService.queueEmail("APPOINTMENT_REMINDER", {
+          appointmentId,
+          targetSlotStart: newSlotStart.toISOString(),
+          recipientEmail: appt.doctor.user.email,
+          patientName: appt.patient.name,
+          doctorName: appt.doctor.user.name,
+          dateStr: newDateStr,
+          isForDoctor: true
+        }, tx, executeAt);
+      }
 
       // Queue calendar sync UPDATE for Doctor
       if (appt.googleEventIdDoctor) {
