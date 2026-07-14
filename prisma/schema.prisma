@@ -1,11 +1,79 @@
-// schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  passwordHash  String
+  name          String
+  role          Role
+  createdAt     DateTime      @default(now())
+  appointments  Appointment[] @relation("PatientAppointments")
+  doctorProfile Doctor?
+}
+
+model Doctor {
+  id              String        @id @default(cuid())
+  userId          String        @unique
+  specialisation  String
+  slotDurationMin Int           @default(20)
+  workingHours    Json
+  appointments    Appointment[]
+  user            User          @relation(fields: [userId], references: [id])
+  leaveDays       LeaveDay[]
+}
+
+model LeaveDay {
+  id        String   @id @default(cuid())
+  doctorId  String
+  date      DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+  doctor    Doctor   @relation(fields: [doctorId], references: [id])
+
+  @@unique([doctorId, date])
+}
+
+model Appointment {
+  id                   String            @id @default(cuid())
+  patientId            String
+  doctorId             String
+  slotStart            DateTime
+  slotEnd              DateTime
+  status               AppointmentStatus @default(HELD)
+  holdExpiresAt        DateTime?
+  symptoms             String?
+  preVisitSummary      Json?
+  doctorNotes          String?
+  prescription         Json?
+  postVisitSummary     String?
+  googleEventIdPatient String?
+  googleEventIdDoctor  String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  doctor               Doctor            @relation(fields: [doctorId], references: [id])
+  patient              User              @relation("PatientAppointments", fields: [patientId], references: [id])
+  notifications        Notification[]
+
+  @@unique([doctorId, slotStart])
+}
+
+model Notification {
+  id            String             @id @default(cuid())
+  appointmentId String
+  type          String
+  recipient     String
+  status        NotificationStatus @default(PENDING)
+  attempts      Int                @default(0)
+  lastError     String?
+  createdAt     DateTime           @default(now())
+  appointment   Appointment        @relation(fields: [appointmentId], references: [id])
 }
 
 enum Role {
@@ -15,11 +83,11 @@ enum Role {
 }
 
 enum AppointmentStatus {
-  HELD          // slot temporarily reserved during checkout
+  HELD
   CONFIRMED
   CANCELLED
   COMPLETED
-  LEAVE_CANCELLED // cancelled because doctor went on leave
+  LEAVE_CANCELLED
 }
 
 enum Urgency {
@@ -32,79 +100,4 @@ enum NotificationStatus {
   PENDING
   SENT
   FAILED
-}
-
-model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  passwordHash  String
-  name          String
-  role          Role
-  createdAt     DateTime @default(now())
-
-  doctorProfile Doctor?
-  appointments  Appointment[] @relation("PatientAppointments")
-}
-
-model Doctor {
-  id             String   @id @default(cuid())
-  user           User     @relation(fields: [userId], references: [id])
-  userId         String   @unique
-  specialisation String
-  slotDurationMin Int     @default(20)
-  workingHours   Json     // e.g. { "mon": ["09:00","17:00"], "tue": [...] }
-  appointments   Appointment[]
-  leaveDays      LeaveDay[]
-}
-
-model LeaveDay {
-  id        String   @id @default(cuid())
-  doctor    Doctor   @relation(fields: [doctorId], references: [id])
-  doctorId  String
-  date      DateTime // stored as date-only
-  reason    String?
-  createdAt DateTime @default(now())
-
-  @@unique([doctorId, date])
-}
-
-model Appointment {
-  id              String   @id @default(cuid())
-  patient         User     @relation("PatientAppointments", fields: [patientId], references: [id])
-  patientId       String
-  doctor          Doctor   @relation(fields: [doctorId], references: [id])
-  doctorId        String
-  slotStart       DateTime
-  slotEnd         DateTime
-  status          AppointmentStatus @default(HELD)
-  holdExpiresAt   DateTime? // used only while status = HELD
-
-  symptoms        String?
-  preVisitSummary Json?    // { urgency, chiefComplaint, questions[] }
-  doctorNotes     String?
-  prescription    Json?    // [{ medicine, dosage, frequency, durationDays }]
-  postVisitSummary String?
-
-  googleEventIdPatient String?
-  googleEventIdDoctor  String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  notifications Notification[]
-
-  // THE key constraint for double-booking prevention:
-  @@unique([doctorId, slotStart])
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  appointment   Appointment @relation(fields: [appointmentId], references: [id])
-  appointmentId String
-  type      String   // "booking_confirmation" | "cancellation" | "reminder" | "medication_reminder"
-  recipient String   // email
-  status    NotificationStatus @default(PENDING)
-  attempts  Int      @default(0)
-  lastError String?
-  createdAt DateTime @default(now())
 }

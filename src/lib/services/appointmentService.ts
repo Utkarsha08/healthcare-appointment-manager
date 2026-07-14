@@ -21,26 +21,51 @@ export const appointmentService = {
   },
 
   async confirmBooking(appointmentId: string, symptoms: string) {
+    // 1. Validate the HELD appointment outside transaction first
+    const initialAppt = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+
+    if (!initialAppt) throw new Error("Appointment not found");
+
+    if (initialAppt.status !== "HELD") {
+      throw new Error("Appointment is no longer in HELD status");
+    }
+
+    if (initialAppt.holdExpiresAt && new Date(initialAppt.holdExpiresAt) < new Date()) {
+      throw new Error("EXPIRED");
+    }
+
+    // 2. Call Gemini outside any transaction with graceful AI fallback
+    let preVisitSummary = null;
+    try {
+      preVisitSummary = await aiProvider.generatePreVisitSummary(symptoms);
+    } catch (error) {
+      // If Gemini fails, use null
+      console.error("Gemini failed during confirmBooking:", error);
+      preVisitSummary = null;
+    }
+
+    // 3. After Gemini finishes, start prisma.$transaction().
     return await prisma.$transaction(async (tx) => {
+      // Re-read the appointment inside the transaction.
       const appt = await tx.appointment.findUnique({
         where: { id: appointmentId },
       });
 
       if (!appt) throw new Error("Appointment not found");
 
+      // Verify it is still HELD.
       if (appt.status !== "HELD") {
         throw new Error("Appointment is no longer in HELD status");
       }
 
+      // Verify it has not expired.
       if (appt.holdExpiresAt && new Date(appt.holdExpiresAt) < new Date()) {
         throw new Error("EXPIRED");
       }
 
-      // Call Gemini inside service, with fallback to null
-      const preVisitSummary = await aiProvider.generatePreVisitSummary(symptoms);
-
-      // We use 'as any' for preVisitSummary because Prisma's Json type is strict 
-      // but passing an object works.
+      // Update appointment to CONFIRMED.
       const updated = await tx.appointment.update({
         where: { id: appointmentId },
         data: {
