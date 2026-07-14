@@ -72,45 +72,52 @@ export default async function ConsultationPage({ params }: { params: { id: strin
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Patient Information</h2>
-              <div className="mb-4">
-                <p className="text-sm text-gray-500">Name</p>
-                <p className="font-semibold text-gray-900 text-lg">{appointment.patient.name}</p>
-              </div>
-              <div className="mb-4">
-                <p className="text-sm text-gray-500">Scheduled Time</p>
-                <p className="font-medium text-gray-900">{new Date(appointment.slotStart).toLocaleDateString()} {startTime} - {endTime}</p>
-              </div>
-              {preVisitSummary && (
-                <div className="mt-4">
-                  <UrgencyBadge level={preVisitSummary.urgencyLevel} />
+            <div className="bg-white rounded-2xl shadow-sm p-6 lg:p-8 border border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 mb-6">Patient Information</h2>
+              <div className="space-y-6">
+                <div>
+                  <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Name</p>
+                  <p className="font-bold text-gray-900 text-lg">{appointment.patient.name}</p>
                 </div>
-              )}
+                <div>
+                  <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Scheduled Time</p>
+                  <p className="font-medium text-gray-900">{new Date(appointment.slotStart).toLocaleDateString()} {startTime} - {endTime}</p>
+                </div>
+                {preVisitSummary && (
+                  <div>
+                    <UrgencyBadge level={preVisitSummary.urgencyLevel} />
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Pre-Visit AI Summary</h2>
+            <div className="bg-white rounded-2xl shadow-sm p-6 lg:p-8 border border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                AI Summary
+              </h2>
               {!preVisitSummary ? (
-                <p className="text-gray-500 italic text-sm">AI summary unavailable.</p>
+                <div className="text-sm text-gray-500 italic bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  AI summary unavailable.
+                </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div>
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chief Complaint</h4>
-                    <p className="text-sm text-gray-800 mt-1">{preVisitSummary.chiefComplaint}</p>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Chief Complaint</h4>
+                    <p className="text-sm text-gray-800 bg-blue-50/50 p-4 rounded-xl border border-blue-100">{preVisitSummary.chiefComplaint}</p>
                   </div>
 
                   {appointment.symptoms && (
                     <div>
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Symptoms</h4>
-                      <p className="text-sm text-gray-800 mt-1">{appointment.symptoms}</p>
+                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Symptoms</h4>
+                      <p className="text-sm text-gray-800 bg-gray-50 p-4 rounded-xl border border-gray-100">{appointment.symptoms}</p>
                     </div>
                   )}
 
                   {preVisitSummary.suggestedQuestions.length > 0 && (
                     <div>
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Suggested Questions</h4>
-                      <ul className="list-disc list-inside text-sm text-gray-800 mt-1 space-y-1">
+                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Suggested Questions</h4>
+                      <ul className="list-disc list-inside text-sm text-gray-800 bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-2">
                         {preVisitSummary.suggestedQuestions.map((q, i) => (
                           <li key={i} className="pl-1">{q}</li>
                         ))}

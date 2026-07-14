@@ -118,7 +118,7 @@ export function HistoryCard({ appt }: HistoryCardProps) {
               </h4>
 
               {appt.postVisitSummary ? (
-                <div className="text-sm text-gray-800 bg-blue-50/50 p-5 rounded-2xl border border-blue-100 whitespace-pre-wrap leading-relaxed shadow-sm">
+                <div className="text-sm text-gray-900 bg-gray-50 p-6 rounded-2xl border border-gray-200 whitespace-pre-wrap leading-relaxed shadow-inner">
                   {appt.postVisitSummary}
                 </div>
               ) : (
@@ -136,7 +136,7 @@ export function HistoryCard({ appt }: HistoryCardProps) {
                   Doctor&apos;s Notes
                 </h4>
 
-                <div className="text-sm text-gray-800 bg-green-50/50 p-5 rounded-2xl border border-green-100 whitespace-pre-wrap leading-relaxed shadow-sm">
+                <div className="text-sm text-gray-900 bg-gray-50 p-6 rounded-2xl border border-gray-200 whitespace-pre-wrap leading-relaxed shadow-inner">
                   {appt.doctorNotes}
                 </div>
               </div>
@@ -154,26 +154,28 @@ export function HistoryCard({ appt }: HistoryCardProps) {
                   {prescriptionList.map((med, index) => (
                     <div
                       key={index}
-                      className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-200 transition-colors"
+                      className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden"
                     >
-                      <div className="font-bold text-gray-900 mb-4 text-base border-b border-gray-50 pb-2">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 rounded-l-2xl"></div>
+                      <div className="font-bold text-gray-900 mb-4 text-base border-b border-gray-100 pb-3 flex items-center gap-2">
+                        <span className="text-indigo-600 font-black font-serif italic text-lg">Rx</span>
                         {med.medicine}
                       </div>
 
                       <div className="space-y-3 text-sm">
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-500">Dosage</span>
-                          <span className="font-semibold text-gray-800 bg-gray-50 px-2 py-1 rounded">{med.dosage}</span>
+                          <span className="text-gray-500 font-medium">Dosage</span>
+                          <span className="font-semibold text-gray-900">{med.dosage}</span>
                         </div>
 
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-500">Frequency</span>
-                          <span className="font-semibold text-gray-800 bg-gray-50 px-2 py-1 rounded">{med.frequency}</span>
+                          <span className="text-gray-500 font-medium">Frequency</span>
+                          <span className="font-semibold text-gray-900">{med.frequency}</span>
                         </div>
 
-                        <div className="flex justify-between items-center border-t border-gray-50 pt-3 mt-1">
-                          <span className="text-gray-500">Duration</span>
-                          <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded">{med.durationDays} days</span>
+                        <div className="flex justify-between items-center border-t border-gray-100 pt-3 mt-1">
+                          <span className="text-gray-500 font-medium">Duration</span>
+                          <span className="font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full">{med.durationDays} days</span>
                         </div>
                       </div>
                     </div>

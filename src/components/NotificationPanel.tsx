@@ -75,12 +75,13 @@ export function NotificationPanel({ initialNotifications }: { initialNotificatio
         return (
           <div 
             key={notif.id} 
-            className={`p-4 border rounded-xl flex items-start gap-3 transition ${
+            className={`p-5 border rounded-2xl flex items-start gap-4 transition-all hover:shadow-md ${
               notif.isRead 
                 ? "bg-white border-gray-100" 
-                : "bg-blue-50 border-blue-200 shadow-sm"
+                : "bg-blue-50/50 border-blue-200 shadow-sm relative overflow-hidden"
             }`}
           >
+            {!notif.isRead && <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-2xl"></div>}
             <div className="mt-1">
               {isReminder ? (
                 <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-sm shadow-indigo-200" />
@@ -107,18 +108,18 @@ export function NotificationPanel({ initialNotifications }: { initialNotificatio
                 {displayMessage}
               </p>
 
-              <div className="flex gap-4 mt-3">
+              <div className="flex gap-3 mt-4">
                 {!notif.isRead && (
                   <button 
                     onClick={() => handleMarkAsRead(notif.id)}
-                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition"
+                    className="text-xs font-semibold text-blue-700 bg-blue-100/50 hover:bg-blue-100 hover:text-blue-800 transition-colors px-3 py-1.5 rounded-lg border border-blue-200/50 focus:ring-2 focus:ring-blue-500 outline-none"
                   >
                     Mark as Read
                   </button>
                 )}
                 <button 
                   onClick={() => handleDismiss(notif.id)}
-                  className="text-xs font-medium text-gray-500 hover:text-red-600 transition"
+                  className="text-xs font-medium text-gray-600 bg-gray-50 hover:bg-red-50 hover:text-red-700 transition-colors px-3 py-1.5 rounded-lg border border-gray-200 hover:border-red-200 focus:ring-2 focus:ring-red-500 outline-none"
                 >
                   Dismiss
                 </button>

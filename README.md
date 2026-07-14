@@ -2,6 +2,9 @@
 
 A full-stack, production-ready healthcare platform engineered to streamline clinical scheduling, patient onboarding, and automated post-visit follow-ups. Built with a modern architecture leveraging serverless database operations, role-based access controls, robust transactional safety, and generative AI integration.
 
+## 📸 Screenshots
+*(Insert application screenshots here: e.g., Patient Dashboard, Doctor Consultation View, AI Summary)*
+
 ## 🚀 Features & Modules
 
 ### 🟢 Phase 1: Core Architecture & Administration (Completed)
@@ -90,6 +93,16 @@ Healthcare Appointment Manager enables doctors to securely connect their Google 
 3. They authorize the application.
 4. Future booked, updated, and cancelled appointments will seamlessly sync to their Google Calendar via background processing, ensuring bookings are never blocked if the Google API is temporarily unavailable.
 
+### Patient Calendar Sync
+Patients can also connect their Google Calendars from the **Patient Profile** page. Once connected, any appointment they book, reschedule, or cancel will automatically synchronize to their personal calendar just like the doctors.
+
+## 💊 Medication Reminder Workflow
+When a doctor writes a prescription during a consultation, the system automatically:
+1. Parses the free-text `frequency` field (e.g., "1-0-1", "Twice Daily") into explicit daily schedules (8 AM & 8 PM).
+2. Generates background jobs targeting the exact future timestamp (`executeAt`) for the entire duration of the prescription.
+3. Fires an in-app notification to the Patient Dashboard at the exact hour.
+4. (Stateless Safety) If the appointment was cancelled or deleted *after* the prescription was written, the background worker safely aborts before notifying the patient.
+
 ## 🚀 Installation & Local Execution
 
 1. **Repository Setup**:
@@ -111,6 +124,14 @@ Healthcare Appointment Manager enables doctors to securely connect their Google 
    ```bash
    npm run dev
    ```
+
+## 🌐 API Overview
+
+The application utilizes Next.js App Router API Routes (`/app/api/...`). Key endpoints include:
+- **`GET /api/doctors/[doctorId]/slots`**: Calculates exact available slots for a specific doctor on a specific day, factoring in working hours, duration, leave days, and existing bookings.
+- **`POST /api/doctor/appointments/[id]/complete`**: Secured endpoint for doctors to submit clinical notes and prescriptions. Triggers AI summarization and background reminder queuing.
+- **`GET /api/cron/process-jobs`**: The heartbeat endpoint. Triggered by Vercel Cron to process pending emails, calendar syncs, and medication reminders incrementally.
+- **`PATCH/DELETE /api/patient/notifications/[id]`**: Interactive endpoints allowing patients to mark in-app notifications as read or dismiss them.
 
 ## 🗄️ Database Schema Overview
 

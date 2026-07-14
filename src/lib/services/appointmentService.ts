@@ -47,10 +47,10 @@ export const appointmentService = {
       preVisitSummary = await aiProvider.generatePreVisitSummary(symptoms);
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
-      const isTransient = 
-        errMsg.includes("429") || 
-        errMsg.includes("503") || 
-        errMsg.includes("RESOURCE_EXHAUSTED") || 
+      const isTransient =
+        errMsg.includes("429") ||
+        errMsg.includes("503") ||
+        errMsg.includes("RESOURCE_EXHAUSTED") ||
         errMsg.includes("UNAVAILABLE");
 
       if (isTransient) {
@@ -58,7 +58,7 @@ export const appointmentService = {
       } else {
         console.error("Gemini failed during confirmBooking:", error);
       }
-      
+
       preVisitSummary = null;
     }
 
@@ -116,7 +116,7 @@ export const appointmentService = {
       );
 
       const { jobService } = await import("./jobService");
-      
+
       const dateStr = new Date(updatedAppt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 
       // Queue confirmation email for PATIENT
@@ -144,7 +144,7 @@ export const appointmentService = {
       // Queue reminder emails (execute 24 hours before slotStart)
       const reminderLeadTimeHours = parseInt(process.env.REMINDER_LEAD_TIME_HOURS || "24", 10);
       const executeAt = new Date(updatedAppt.slotStart.getTime() - reminderLeadTimeHours * 60 * 60 * 1000);
-      
+
       // Only queue if it's in the future
       if (executeAt > new Date()) {
         await jobService.queueEmail("APPOINTMENT_REMINDER", {
@@ -203,7 +203,7 @@ export const appointmentService = {
 
     // We can also fire an asynchronous, background fetch to our cron endpoint to process it immediately,
     // or just let the actual cron handle it. For immediate best-effort delivery:
-    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/cron/process-jobs`).catch(() => {});
+    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/cron/process-jobs`).catch(() => { });
 
     return finalAppt;
   },
@@ -232,9 +232,9 @@ export const appointmentService = {
       });
 
       const { notificationService } = await import("./notificationService");
-      
+
       const dateStr = new Date(appt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
-      
+
       await notificationService.createPatientCancellationNotification(
         tx,
         appointmentId,
@@ -287,7 +287,7 @@ export const appointmentService = {
       return updated;
     });
 
-    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/cron/process-jobs`).catch(() => {});
+    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/cron/process-jobs`).catch(() => { });
 
     return cancelledAppt;
   },
@@ -394,7 +394,7 @@ export const appointmentService = {
       // Queue new reminder emails
       const reminderLeadTimeHours = parseInt(process.env.REMINDER_LEAD_TIME_HOURS || "24", 10);
       const executeAt = new Date(newSlotStart.getTime() - reminderLeadTimeHours * 60 * 60 * 1000);
-      
+
       if (executeAt > new Date()) {
         await jobService.queueEmail("APPOINTMENT_REMINDER", {
           appointmentId,
@@ -456,7 +456,7 @@ export const appointmentService = {
       return updated;
     });
 
-    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/cron/process-jobs`).catch(() => {});
+    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/cron/process-jobs`).catch(() => { });
 
     return updatedAppt;
   }

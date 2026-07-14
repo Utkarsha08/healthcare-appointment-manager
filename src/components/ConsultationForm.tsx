@@ -70,13 +70,14 @@ export default function ConsultationForm({ appointmentId }: { appointmentId: str
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Clinical Notes</h2>
+      <div className="space-y-4">
+        <label className="text-xl font-bold text-gray-900 block" htmlFor="clinical-notes">Clinical Notes</label>
         <textarea
+          id="clinical-notes"
           value={doctorNotes}
           onChange={(e) => setDoctorNotes(e.target.value)}
-          rows={6}
-          className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3"
+          rows={8}
+          className="w-full"
           placeholder="Enter detailed clinical observations, diagnosis, and treatment plan here..."
           required
         />
@@ -89,69 +90,71 @@ export default function ConsultationForm({ appointmentId }: { appointmentId: str
             type="button"
             onClick={handleAddMedicine}
             disabled={isSubmitting || isSuccess}
-            className="text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg disabled:opacity-50"
+            className="text-sm font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2.5 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 border border-transparent hover:border-blue-200"
             aria-label="Add Medicine"
           >
-            + Add Medicine
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+            Add Medicine
           </button>
         </div>
 
         {prescription.length === 0 ? (
           <p className="text-gray-500 text-sm italic py-4 bg-gray-50 rounded-lg text-center">No medicines added.</p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {prescription.map((med, index) => (
-              <div key={index} className="flex gap-4 items-start bg-gray-50 p-4 rounded-lg border border-gray-100">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Medicine Name</label>
+              <div key={index} className="flex gap-4 items-start bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-sm relative">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 flex-1 pr-8 md:pr-0">
+                  <div className="md:col-span-1">
+                    <label className="block text-sm font-semibold text-gray-800 mb-1.5">Medicine Name</label>
                     <input
                       type="text"
                       value={med.medicine}
                       onChange={(e) => handleMedicineChange(index, "medicine", e.target.value)}
-                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Dosage</label>
+                  <div className="md:col-span-1">
+                    <label className="block text-sm font-semibold text-gray-800 mb-1.5">Dosage</label>
                     <input
                       type="text"
                       value={med.dosage}
                       onChange={(e) => handleMedicineChange(index, "dosage", e.target.value)}
                       placeholder="e.g. 500mg"
-                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Frequency</label>
+                  <div className="md:col-span-1">
+                    <label className="block text-sm font-semibold text-gray-800 mb-1.5">Frequency</label>
                     <input
                       type="text"
                       value={med.frequency}
                       onChange={(e) => handleMedicineChange(index, "frequency", e.target.value)}
-                      placeholder="e.g. 1-0-1 (Morning/Night)"
-                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+                      placeholder="e.g. 1-0-1"
                       required
                     />
+                    <p className="text-xs text-gray-500 mt-2 font-medium">
+                      Examples: 1-0-1, 1-1-1, Twice Daily, Night
+                    </p>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Duration (Days)</label>
+                  <div className="md:col-span-1">
+                    <label className="block text-sm font-semibold text-gray-800 mb-1.5">Duration (Days)</label>
                     <input
                       type="number"
                       min="1"
                       value={med.durationDays}
                       onChange={(e) => handleMedicineChange(index, "durationDays", e.target.value)}
-                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
                       required
                     />
                   </div>
                 </div>
+                
+                {/* Delete Button aligned to top-right on mobile, centered on desktop */}
                 <button
                   type="button"
                   onClick={() => handleRemoveMedicine(index)}
                   disabled={isSubmitting || isSuccess}
-                  className="text-red-500 hover:text-red-700 p-2 disabled:opacity-50"
+                  className="absolute right-4 top-4 md:static md:mt-8 text-gray-400 hover:text-red-600 bg-white hover:bg-red-50 p-2.5 rounded-full border border-transparent hover:border-red-100 transition-colors disabled:opacity-50 shadow-sm"
                   title="Remove Medicine"
                   aria-label={`Remove medicine ${med.medicine || `at index ${index}`}`}
                 >
