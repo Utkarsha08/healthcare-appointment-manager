@@ -21,8 +21,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </div>
         <nav className="flex-1 px-4 space-y-2 mt-4">
           <Link
+            href="/admin"
+            className="block px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition"
+          >
+            Dashboard
+          </Link>
+          <Link
             href="/admin/doctors"
-            className="block px-4 py-3 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition"
+            className="block px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition"
           >
             Doctors
           </Link>

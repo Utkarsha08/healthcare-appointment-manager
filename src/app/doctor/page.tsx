@@ -21,13 +21,16 @@ function AppointmentCard({ appointment }: { appointment: TodayAppointment }) {
   const isConfirmed = appointment.status === "CONFIRMED";
 
   const content = (
-    <div className={`rounded-2xl shadow-sm p-6 mb-4 border transition-all ${isConfirmed ? 'bg-white border-blue-200 hover:shadow-md hover:border-blue-400 cursor-pointer' : 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed'}`}>
-      <div className="flex justify-between items-start mb-5">
+    <div className={`rounded-3xl shadow-sm p-6 sm:p-8 mb-4 border transition-all ${isConfirmed ? 'bg-white border-blue-200 hover:shadow-md hover:border-blue-400' : 'bg-gray-50 border-gray-200 opacity-75'}`}>
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
         <div>
-          <h3 className="text-xl font-bold text-gray-900">{appointment.patient.name}</h3>
-          <p className="text-sm font-medium text-gray-500 mt-1">{startTime} - {endTime}</p>
+          <h3 className="text-2xl font-bold text-gray-900">{appointment.patient.name}</h3>
+          <p className="text-base font-medium text-blue-600 mt-1 flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            {startTime} - {endTime}
+          </p>
         </div>
-        <div className="flex flex-col gap-2 items-end">
+        <div className="flex flex-wrap gap-2 sm:justify-end">
           <Badge variant={appointment.status as BadgeVariant} />
           {appointment.preVisitSummary && (
             <Badge variant={appointment.preVisitSummary.urgencyLevel.toUpperCase() as BadgeVariant} />
@@ -35,27 +38,27 @@ function AppointmentCard({ appointment }: { appointment: TodayAppointment }) {
         </div>
       </div>
 
-      <div className="mt-4 pt-4 border-t border-gray-100">
+      <div className="pt-6 border-t border-gray-100">
         {!appointment.preVisitSummary ? (
-          <p className="text-gray-500 italic text-sm">AI summary unavailable</p>
+          <p className="text-gray-500 italic text-sm bg-gray-50 p-4 rounded-xl">AI summary unavailable</p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chief Complaint</h4>
-              <p className="text-sm text-gray-800 mt-1">{appointment.preVisitSummary.chiefComplaint}</p>
+              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Chief Complaint</h4>
+              <p className="text-sm text-gray-800 bg-blue-50/50 p-4 rounded-xl border border-blue-100">{appointment.preVisitSummary.chiefComplaint}</p>
             </div>
 
             {appointment.symptoms && (
               <div>
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Symptoms</h4>
-                <p className="text-sm text-gray-800 mt-1">{appointment.symptoms}</p>
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Symptoms</h4>
+                <p className="text-sm text-gray-800 bg-gray-50 p-4 rounded-xl border border-gray-100">{appointment.symptoms}</p>
               </div>
             )}
 
             {appointment.preVisitSummary.suggestedQuestions.length > 0 && (
               <div>
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Suggested Questions</h4>
-                <ul className="list-disc list-inside text-sm text-gray-800 mt-1 space-y-1">
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Suggested Questions</h4>
+                <ul className="list-disc list-inside text-sm text-gray-800 bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-1">
                   {appointment.preVisitSummary.suggestedQuestions.map((q, i) => (
                     <li key={i} className="pl-1">{q}</li>
                   ))}
@@ -65,12 +68,20 @@ function AppointmentCard({ appointment }: { appointment: TodayAppointment }) {
           </div>
         )}
       </div>
+
+      {isConfirmed && (
+        <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end">
+          <Link
+            href={`/doctor/consultation/${appointment.id}`}
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium shadow-sm transition focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            Start Consultation
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+          </Link>
+        </div>
+      )}
     </div>
   );
-
-  if (isConfirmed) {
-    return <Link href={`/doctor/consultation/${appointment.id}`} className="block">{content}</Link>;
-  }
 
   return content;
 }
@@ -148,24 +159,45 @@ export default async function DoctorDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content: Appointments */}
-          <div className="lg:col-span-2">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Today&apos;s Schedule</h2>
-              <p className="text-gray-500 mt-1">Select a confirmed appointment to begin consultation.</p>
-            </div>
-
-            {appointments.length === 0 ? (
-              <EmptyState
-                title="No Appointments"
-                description="You have no appointments scheduled for today. Enjoy your day!"
-              />
-            ) : (
-              <div className="space-y-4">
-                {appointments.map((apt) => (
-                  <AppointmentCard key={apt.id} appointment={apt} />
-                ))}
+          <div className="lg:col-span-2 space-y-10">
+            {/* Current / Next Appointment */}
+            <section>
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Current / Next Appointment</h2>
+                <p className="text-gray-500 mt-1">Select to begin consultation.</p>
               </div>
-            )}
+
+              {appointments.filter(a => a.status === "CONFIRMED").length === 0 ? (
+                <EmptyState
+                  title="No Upcoming Appointments"
+                  description="You have no more confirmed appointments for today."
+                  icon={<svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" /></svg>}
+                />
+              ) : (
+                <AppointmentCard appointment={appointments.filter(a => a.status === "CONFIRMED")[0]} />
+              )}
+            </section>
+
+            {/* Later Today */}
+            <section>
+              <div className="mb-6 pt-6 border-t border-gray-100">
+                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Later Today & Completed</h2>
+                <p className="text-gray-500 mt-1">The rest of your schedule.</p>
+              </div>
+
+              {appointments.filter(a => a.id !== appointments.find(ap => ap.status === "CONFIRMED")?.id).length === 0 ? (
+                <EmptyState
+                  title="Schedule Clear"
+                  description="No other appointments scheduled for today."
+                />
+              ) : (
+                <div className="space-y-4">
+                  {appointments.filter(a => a.id !== appointments.find(ap => ap.status === "CONFIRMED")?.id).map((apt) => (
+                    <AppointmentCard key={apt.id} appointment={apt} />
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
 
           {/* Right Sidebar: Notifications */}

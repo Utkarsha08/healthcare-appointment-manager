@@ -93,17 +93,24 @@ export default async function PatientPage() {
               <EmptyState
                 title="No upcoming appointments."
                 description="Book your first appointment to get started."
+                icon={<svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
               />
             ) : (
               <div className="space-y-4">
                 {upcomingAppointments.map((appt) => (
-                  <div key={appt.id} className="p-5 border border-blue-100 rounded-2xl bg-blue-50/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition hover:bg-blue-50/60">
-                    <div>
-                      <div className="font-bold text-gray-900 text-lg">Dr. {appt.doctor.user.name}</div>
-                      <div className="text-sm text-gray-600 font-medium">{appt.doctor.specialisation}</div>
+                  <div key={appt.id} className="p-6 border border-blue-100 rounded-2xl bg-white shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition hover:shadow-md hover:border-blue-300">
+                    <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
+                          {appt.doctor.user.name.charAt(0)}
+                       </div>
+                       <div>
+                         <div className="font-bold text-gray-900 text-lg">Dr. {appt.doctor.user.name}</div>
+                         <div className="text-sm text-gray-500 font-medium">{appt.doctor.specialisation}</div>
+                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold text-blue-800 bg-blue-100 px-4 py-2 rounded-lg">
+                    <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
+                      <div className="text-sm font-semibold text-blue-700 bg-blue-50 px-4 py-2 rounded-xl flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         {new Date(appt.slotStart).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
                       </div>
                     </div>

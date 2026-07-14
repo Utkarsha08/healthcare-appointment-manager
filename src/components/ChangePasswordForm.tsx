@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+
 import Link from "next/link";
 import { Alert } from "@/components/ui/Alert";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -18,7 +18,7 @@ interface ChangePasswordFormProps {
 export default function ChangePasswordForm({
     user,
 }: ChangePasswordFormProps) {
-    const router = useRouter();
+  
 
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
