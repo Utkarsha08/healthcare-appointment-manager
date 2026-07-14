@@ -91,6 +91,9 @@ model Notification {
   appointmentId String
   type          String
   recipient     String
+  title         String?
+  message       String?
+  isRead        Boolean            @default(false)
   status        NotificationStatus @default(PENDING)
   attempts      Int                @default(0)
   lastError     String?

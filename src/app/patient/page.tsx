@@ -8,6 +8,7 @@ import { HistoryCard } from "@/components/HistoryCard";
 import { UserMenu } from "@/components/UserMenu";
 import CancelAppointmentButton from "@/components/CancelAppointmentButton";
 import RescheduleAppointmentModal from "@/components/RescheduleAppointmentModal";
+import { NotificationPanel } from "@/components/NotificationPanel";
 
 export default async function PatientPage() {
   const session = await getServerSession(authOptions);
@@ -162,41 +163,16 @@ export default async function PatientPage() {
               Recent Notifications
             </h2>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              {notifications.length === 0 ? (
-                <EmptyState
-                  title="No notifications yet."
-                  description="Updates regarding your appointments will appear here."
-                  className="bg-transparent border-dashed p-4"
-                />
-              ) : (
-                <div className="space-y-4">
-                  {notifications.map((notif) => {
-                    const message = notif.type.replace(/_/g, " ");
-
-                    return (
-                      <div key={notif.id} className="p-4 border border-gray-100 rounded-xl bg-gray-50 flex items-start gap-3">
-                        <div className="mt-1">
-                          {notif.type.toLowerCase().includes("cancel") ? (
-                            <div className="w-2 h-2 rounded-full bg-red-500" />
-                          ) : notif.type.toLowerCase().includes("confirm") ? (
-                            <div className="w-2 h-2 rounded-full bg-green-500" />
-                          ) : (
-                            <div className="w-2 h-2 rounded-full bg-blue-500" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900 capitalize">
-                            {message}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {notif.createdAt.toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <NotificationPanel 
+                initialNotifications={notifications.map(n => ({
+                  id: n.id,
+                  type: n.type,
+                  title: n.title,
+                  message: n.message,
+                  isRead: n.isRead,
+                  createdAt: n.createdAt
+                }))} 
+              />
             </div>
           </section>
         </div>

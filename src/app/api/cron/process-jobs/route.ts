@@ -126,7 +126,35 @@ export async function GET() {
             }
           }
         } else if (job.type === "MEDICATION_REMINDER") {
-          // Future implementation
+          const p = job.payload as {
+            appointmentId: string;
+            patientId: string;
+            medicine: string;
+            dosage: string;
+            frequency: string;
+            doctorName: string;
+          };
+          
+          const { prisma } = await import("@/lib/prisma");
+          const appt = await prisma.appointment.findUnique({
+            where: { id: p.appointmentId },
+            include: { patient: true }
+          });
+          
+          if (appt && appt.status === "COMPLETED") {
+            await prisma.notification.create({
+              data: {
+                appointmentId: p.appointmentId,
+                recipient: appt.patient.email || "",
+                type: "MEDICATION_REMINDER",
+                title: "💊 Medication Reminder",
+                message: `Time to take ${p.medicine} (${p.dosage}). Frequency: ${p.frequency}. Prescribed by Dr. ${p.doctorName}.`,
+                isRead: false
+              }
+            });
+          } else {
+            console.log(`Skipping medication reminder: appointment ${p.appointmentId} is no longer completed or does not exist.`);
+          }
         } else {
           console.warn(`Unknown job type ${job.type} for job ${job.id}`);
         }

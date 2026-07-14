@@ -38,6 +38,31 @@ export const jobService = {
     });
   },
 
+  async queueMedicationReminder(
+    payload: {
+      appointmentId: string;
+      patientId: string;
+      medicine: string;
+      dosage: string;
+      frequency: string;
+      doctorName: string;
+    },
+    tx?: Prisma.TransactionClient,
+    executeAt?: Date
+  ) {
+    const data = {
+      type: "MEDICATION_REMINDER",
+      payload: payload as Prisma.InputJsonValue,
+      status: "PENDING" as const,
+      executeAt: executeAt || new Date(),
+    };
+    
+    const db = tx || prisma;
+    return await db.backgroundJob.create({
+      data,
+    });
+  },
+
   async markJobCompleted(id: string) {
     return await prisma.backgroundJob.update({
       where: { id },

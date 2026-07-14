@@ -112,6 +112,39 @@ Healthcare Appointment Manager enables doctors to securely connect their Google 
    npm run dev
    ```
 
+## 🗄️ Database Schema Overview
+
+The platform uses a relational Postgres schema designed for atomicity:
+- **User**: Base identity model storing credentials, RBAC roles (`ADMIN`, `DOCTOR`, `PATIENT`), and OAuth tokens.
+- **Doctor**: Extension model storing clinical specifics (working hours, slot duration).
+- **Appointment**: The central model. Relates Patient to Doctor. Stores slot times, AI summaries, `doctorNotes`, `prescription` JSON, and Google Calendar IDs.
+- **Notification**: UI notification tracker with `isRead` states.
+- **BackgroundJob**: Durable task queue model driving emails, calendar syncing, and medication reminders.
+- **LeaveDay**: Tracks doctor unavailability.
+
+## 🧠 LLM Prompts Overview
+
+Generative AI (Gemini) is integrated via two key system prompts:
+1. **Symptom Triaging**: Formats patient inputs into structured, professional medical summaries, identifying potential urgencies and suggesting context-aware questions for the doctor.
+2. **Post-Visit Summary**: Translates the doctor's shorthand clinical notes into a patient-friendly, easy-to-read explanation of the diagnosis and care plan.
+
+## 🔄 Background Job Architecture
+
+The system features a custom, lightweight task queue built on top of Postgres to guarantee non-blocking operations:
+- **`process-jobs` cron endpoint**: Processes pending jobs incrementally.
+- **Medication Reminders**: Automatically parsed from free-text prescriptions and scheduled for specific timestamps using `executeAt` logic.
+- **Calendar Sync**: Background retries for Google Calendar API interactions ensure transient network failures never break UI responsiveness.
+
+## 🚀 Deployment Guide
+
+This repository is fully optimized for **Vercel** deployment:
+1. Fork or push this repository to GitHub.
+2. Import the project into Vercel.
+3. Provision a **Neon Serverless Postgres** database and set `DATABASE_URL`.
+4. Add all environment variables (Google OAuth, Resend/SMTP, Gemini).
+5. **CRON Setup**: To keep the background worker processing, set up a Vercel Cron Job targeting `/api/cron/process-jobs` every 1 minute.
+6. Deploy!
+
 ## 👥 Demo Accounts
 
 The seed script creates the following demo accounts with the password `password123`:
@@ -120,5 +153,5 @@ The seed script creates the following demo accounts with the password `password1
 - **Doctor 1**: `doctor1@example.com`
 - **Doctor 2**: `doctor2@example.com`
 - **Doctor 3**: `doctor3@example.com`
-- **Patient 1**: `patient1@example.com` (Or create your own via `/register`!)
+- **Patient 1**: `patient1@example.com`
 - **Patient 2**: `patient2@example.com`

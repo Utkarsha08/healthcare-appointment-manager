@@ -110,7 +110,7 @@ export const doctorService = {
       const appt = await tx.appointment.findUnique({
         where: { id: appointmentId },
         include: {
-          doctor: true,
+          doctor: { include: { user: true } },
           patient: true,
         },
       });
@@ -145,7 +145,63 @@ export const doctorService = {
         appt.patient.email || ""
       );
 
+      // Queue Medication Reminders
+      if (prescription && Array.isArray(prescription) && prescription.length > 0) {
+        const { jobService } = await import("./jobService");
+        
+        for (const med of (prescription as PrescriptionMedicine[])) {
+          if (!med.durationDays || med.durationDays <= 0) continue;
+          
+          const times = parseFrequencyTimes(med.frequency || "");
+          const today = new Date();
+          // Start from tomorrow, or today if it's early enough (simplified to start tomorrow for safety)
+          
+          for (let i = 1; i <= med.durationDays; i++) {
+            const dayDate = new Date(today);
+            dayDate.setDate(dayDate.getDate() + i);
+            
+            for (const hour of times) {
+              const executeAt = new Date(dayDate);
+              executeAt.setHours(hour, 0, 0, 0);
+              
+              if (executeAt > new Date()) {
+                await jobService.queueMedicationReminder({
+                  appointmentId,
+                  patientId: appt.patient.id,
+                  medicine: med.medicine,
+                  dosage: med.dosage,
+                  frequency: med.frequency,
+                  doctorName: appt.doctor.user.name,
+                }, tx, executeAt);
+              }
+            }
+          }
+        }
+      }
+
       return updated;
     });
   }
 };
+
+function parseFrequencyTimes(frequency: string): number[] {
+  const f = frequency.toLowerCase();
+  
+  const parts = f.split('-');
+  if (parts.length === 3) {
+    const times: number[] = [];
+    if (parseInt(parts[0]) > 0) times.push(8); // 8 AM
+    if (parseInt(parts[1]) > 0) times.push(13); // 1 PM
+    if (parseInt(parts[2]) > 0) times.push(20); // 8 PM
+    if (times.length > 0) return times;
+  }
+  
+  if (f.includes("twice") || f.includes("2")) return [8, 20];
+  if (f.includes("thrice") || f.includes("3") || f.includes("three")) return [8, 13, 20];
+  if (f.includes("four") || f.includes("4")) return [8, 12, 16, 20];
+  if (f.includes("night") || f.includes("bed")) return [21];
+  if (f.includes("afternoon")) return [13];
+  
+  // Default safely to 8 AM
+  return [8];
+}
