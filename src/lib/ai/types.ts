@@ -6,4 +6,5 @@ export interface PreVisitSummary {
 
 export interface AIProvider {
   generatePreVisitSummary(symptoms: string): Promise<PreVisitSummary | null>;
+  generatePostVisitSummary(notes: string): Promise<string | null>;
 }

@@ -82,10 +82,7 @@ Rules:
 
         return parsed;
       } catch (error: unknown) {
-        console.error(
-          `❌ Gemini attempt ${attempt} failed:`,
-          error
-        );
+        console.error(`❌ Gemini attempt ${attempt} failed:`, error);
 
         let shouldRetry = false;
 
@@ -96,7 +93,6 @@ Rules:
         ) {
           const status = (error as { status?: number }).status;
 
-          // Retry only on temporary failures
           if (status === 429 || status === 500 || status === 503) {
             shouldRetry = true;
           }
@@ -112,6 +108,80 @@ Rules:
 
         console.warn(
           "⚠️ AI summary unavailable. Continuing booking without blocking."
+        );
+
+        return null;
+      }
+    }
+
+    return null;
+  }
+
+  async generatePostVisitSummary(notes: string): Promise<string | null> {
+    if (!this.ai) return null;
+
+    const prompt = `Convert these clinical notes into a patient-friendly summary with a medication schedule and follow-up steps.
+
+Return plain text only.
+
+Notes:
+${notes}`;
+
+    const MAX_RETRIES = 3;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        console.log(
+          `🤖 Gemini post-visit request (attempt ${attempt}/${MAX_RETRIES}) using model: ${GEMINI_MODEL}`
+        );
+
+        const response = await this.ai.models.generateContent({
+          model: GEMINI_MODEL,
+          contents: prompt,
+          config: {
+            temperature: 0.2,
+          },
+        });
+
+        const text = response.text;
+
+        if (!text) {
+          throw new Error("Gemini returned an empty response.");
+        }
+
+        console.log("✅ Gemini post-visit summary generated successfully.");
+
+        return text.trim();
+      } catch (error: unknown) {
+        console.error(
+          `❌ Gemini post-visit attempt ${attempt} failed:`,
+          error
+        );
+
+        let shouldRetry = false;
+
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "status" in error
+        ) {
+          const status = (error as { status?: number }).status;
+
+          if (status === 429 || status === 500 || status === 503) {
+            shouldRetry = true;
+          }
+        }
+
+        if (attempt < MAX_RETRIES && shouldRetry) {
+          console.log("⏳ Retrying Gemini post-visit request in 2 seconds...");
+
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+
+          continue;
+        }
+
+        console.warn(
+          "⚠️ Post-visit AI summary unavailable. Continuing consultation without blocking."
         );
 
         return null;

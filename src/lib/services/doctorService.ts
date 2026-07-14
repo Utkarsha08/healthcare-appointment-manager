@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import { aiProvider } from "@/lib/ai/gemini";
 import { PreVisitSummary } from "@/lib/ai/types";
 
 export type TodayAppointment = {
@@ -11,6 +13,13 @@ export type TodayAppointment = {
     name: string;
   };
 };
+
+export interface PrescriptionMedicine {
+  medicine: string;
+  dosage: string;
+  frequency: string;
+  durationDays: number;
+}
 
 export const doctorService = {
   async getTodayAppointments(userId: string): Promise<TodayAppointment[]> {
@@ -52,5 +61,72 @@ export const doctorService = {
       ...apt,
       preVisitSummary: apt.preVisitSummary as unknown as PreVisitSummary | null,
     }));
+  },
+
+  async saveConsultation(
+    appointmentId: string,
+    doctorId: string,
+    doctorNotes: string,
+    prescription: PrescriptionMedicine[]
+  ) {
+    // 1. Validate appointment and ownership
+    const initialAppt = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        doctor: true,
+      },
+    });
+
+    if (!initialAppt) {
+      throw new Error("Appointment not found");
+    }
+
+    if (initialAppt.doctor.userId !== doctorId) {
+      throw new Error("Unauthorized");
+    }
+
+    if (initialAppt.status !== "CONFIRMED") {
+      throw new Error("Appointment is not CONFIRMED");
+    }
+
+    // 2. Generate Gemini summary outside transaction
+    let postVisitSummary: string | null = null;
+
+    if (doctorNotes.trim().length > 0) {
+      postVisitSummary = await aiProvider.generatePostVisitSummary(doctorNotes);
+    }
+
+    // 3. Save atomically
+    return await prisma.$transaction(async (tx) => {
+      const appt = await tx.appointment.findUnique({
+        where: { id: appointmentId },
+        include: {
+          doctor: true,
+        },
+      });
+
+      if (!appt) {
+        throw new Error("Appointment not found");
+      }
+
+      if (appt.doctor.userId !== doctorId) {
+        throw new Error("Unauthorized");
+      }
+
+      if (appt.status !== "CONFIRMED") {
+        throw new Error("Appointment is no longer CONFIRMED");
+      }
+
+      return await tx.appointment.update({
+        where: { id: appointmentId },
+        data: {
+          doctorNotes,
+          prescription:
+            prescription as unknown as Prisma.InputJsonValue,
+          postVisitSummary,
+          status: "COMPLETED",
+        },
+      });
+    });
   }
 };

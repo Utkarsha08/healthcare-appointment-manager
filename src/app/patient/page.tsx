@@ -76,17 +76,17 @@ export default async function PatientPage() {
           {previousAppointments.length === 0 ? (
             <div className="text-gray-500 text-sm py-4">No previous appointments.</div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {previousAppointments.map((appt) => (
-                <div key={appt.id} className="p-4 border border-gray-100 rounded-xl">
-                  <div className="flex justify-between items-start">
+                <div key={appt.id} className="p-5 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start mb-4">
                     <div>
-                      <div className="font-semibold text-gray-900">{appt.doctor.user.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {new Date(appt.slotStart).toLocaleDateString()}
+                      <div className="font-semibold text-gray-900 text-lg">Dr. {appt.doctor.user.name}</div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        {new Date(appt.slotStart).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                       </div>
                     </div>
-                    <span className={`text-xs font-bold px-2 py-1 rounded-md ${
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${
                       appt.status === "COMPLETED" ? "bg-green-100 text-green-700" :
                       appt.status === "LEAVE_CANCELLED" ? "bg-red-100 text-red-700" :
                       "bg-gray-100 text-gray-700"
@@ -94,6 +94,39 @@ export default async function PatientPage() {
                       {appt.status}
                     </span>
                   </div>
+
+                  {appt.status === "COMPLETED" && (
+                    <div className="mt-6 space-y-6 pt-4 border-t border-gray-100">
+                      <div>
+                        <h4 className="text-sm font-bold text-gray-900 mb-2">Visit Summary</h4>
+                        {appt.postVisitSummary ? (
+                          <div className="text-sm text-gray-700 bg-blue-50/50 p-4 rounded-lg border border-blue-100 whitespace-pre-wrap">
+                            {appt.postVisitSummary}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500 italic">AI summary unavailable.</p>
+                        )}
+                      </div>
+
+                      {appt.prescription && Array.isArray(appt.prescription) && appt.prescription.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-bold text-gray-900 mb-3">Prescription</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {(appt.prescription as unknown as Array<{medicine: string; dosage: string; frequency: string; durationDays: number}>).map((med, idx) => (
+                              <div key={idx} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                                <div className="font-semibold text-gray-800 text-sm mb-1">{med.medicine}</div>
+                                <div className="text-xs text-gray-600 grid grid-cols-2 gap-2 mt-2">
+                                  <div><span className="text-gray-400">Dosage:</span> {med.dosage}</div>
+                                  <div><span className="text-gray-400">Frequency:</span> {med.frequency}</div>
+                                  <div className="col-span-2"><span className="text-gray-400">Duration:</span> {med.durationDays} days</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

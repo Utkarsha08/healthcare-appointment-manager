@@ -3,6 +3,8 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { doctorService, TodayAppointment } from "@/lib/services/doctorService";
 
+import Link from "next/link";
+
 function UrgencyBadge({ level }: { level: "Low" | "Medium" | "High" }) {
   const colors = {
     Low: "bg-green-100 text-green-800",
@@ -28,48 +30,50 @@ function AppointmentCard({ appointment }: { appointment: TodayAppointment }) {
   const endTime = timeFormat.format(new Date(appointment.slotEnd));
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 mb-4 border border-gray-200 hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start mb-5">
-        <div>
-          <h3 className="text-xl font-semibold text-gray-900">{appointment.patient.name}</h3>
-          <p className="text-sm font-medium text-gray-500 mt-1">{startTime} - {endTime}</p>
-        </div>
-        {appointment.preVisitSummary && (
-          <UrgencyBadge level={appointment.preVisitSummary.urgencyLevel} />
-        )}
-      </div>
-
-      <div className="mt-4 pt-4 border-t border-gray-100">
-        {!appointment.preVisitSummary ? (
-          <p className="text-gray-500 italic text-sm">AI summary unavailable</p>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chief Complaint</h4>
-              <p className="text-sm text-gray-800 mt-1">{appointment.preVisitSummary.chiefComplaint}</p>
-            </div>
-            
-            {appointment.symptoms && (
-              <div>
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Symptoms</h4>
-                <p className="text-sm text-gray-800 mt-1">{appointment.symptoms}</p>
-              </div>
-            )}
-
-            {appointment.preVisitSummary.suggestedQuestions.length > 0 && (
-              <div>
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Suggested Questions</h4>
-                <ul className="list-disc list-inside text-sm text-gray-800 mt-1 space-y-1">
-                  {appointment.preVisitSummary.suggestedQuestions.map((q, i) => (
-                    <li key={i} className="pl-1">{q}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+    <Link href={`/doctor/consultation/${appointment.id}`} className="block">
+      <div className="bg-white rounded-xl shadow-sm p-6 mb-4 border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
+        <div className="flex justify-between items-start mb-5">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900">{appointment.patient.name}</h3>
+            <p className="text-sm font-medium text-gray-500 mt-1">{startTime} - {endTime}</p>
           </div>
-        )}
+          {appointment.preVisitSummary && (
+            <UrgencyBadge level={appointment.preVisitSummary.urgencyLevel} />
+          )}
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          {!appointment.preVisitSummary ? (
+            <p className="text-gray-500 italic text-sm">AI summary unavailable</p>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chief Complaint</h4>
+                <p className="text-sm text-gray-800 mt-1">{appointment.preVisitSummary.chiefComplaint}</p>
+              </div>
+              
+              {appointment.symptoms && (
+                <div>
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Symptoms</h4>
+                  <p className="text-sm text-gray-800 mt-1">{appointment.symptoms}</p>
+                </div>
+              )}
+
+              {appointment.preVisitSummary.suggestedQuestions.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Suggested Questions</h4>
+                  <ul className="list-disc list-inside text-sm text-gray-800 mt-1 space-y-1">
+                    {appointment.preVisitSummary.suggestedQuestions.map((q, i) => (
+                      <li key={i} className="pl-1">{q}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
