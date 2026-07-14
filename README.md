@@ -31,6 +31,13 @@ A full-stack, production-ready healthcare platform engineered to streamline clin
 - **Profile Management**: Editable profiles for Patients, Doctors, and Admins.
 - **Security**: Dedicated `/change-password` route with bcrypt hashing and current password verification.
 
+### 🟢 Phase 5: Automation, Notifications & Healthcare Integrations (Completed)
+- **Google Calendar Synchronization**: Secure OAuth 2.0 integration enabling both Doctors and Patients to sync appointments. Calendar events are automatically created, updated, and removed throughout the appointment lifecycle.
+- **Professional Email Notifications**: Branded HTML email system delivering booking confirmations, appointment reminders, rescheduling updates, and cancellation notifications to both patients and doctors.
+- **Medication Reminder Engine**: Intelligent background-job-driven reminder system that parses prescribed medication schedules and delivers timely in-app reminders throughout the treatment duration.
+- **In-App Notification Center**: Unified notification system allowing patients to receive, manage, mark as read, and dismiss appointment and medication reminders.
+- **Reliable Background Processing**: Transaction-safe background job queue powering email delivery, Google Calendar synchronization, medication reminders, and automatic retry handling without impacting user-facing operations.
+
 ## 🛠️ Architecture & Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
@@ -176,3 +183,7 @@ The seed script creates the following demo accounts with the password `password1
 - **Doctor 3**: `doctor3@example.com`
 - **Patient 1**: `patient1@example.com`
 - **Patient 2**: `patient2@example.com`
+
+## 📄 Additional Documentation
+
+- **System Design:** See [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md)
